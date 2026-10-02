@@ -1,0 +1,3181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f2efe5">
+<meta name="description" content="Kitchen.exe — your personal recipe feed reader + ingredient search.">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Kitchen.exe%22%2C%22short_name%22%3A%22Kitchen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f2efe5%22%2C%22theme_color%22%3A%22%23f2efe5%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%253D%25270%25200%252064%252064%2527%253E%253Crect%2520width%253D%252764%2527%2520height%253D%252764%2527%2520fill%253D%2527%2523d8ff43%2527%2F%253E%253Ctext%2520x%253D%252732%2527%2520y%2520%253D%252742%2527%2520font-size%253D%252738%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%258D%25B3%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<title>Kitchen.exe — Recipe Feed Reader + Explore</title>
+<style>
+  :root{
+    --paper:#f2efe5;
+    --panel:#fffdf7;
+    --ink:#171717;
+    --muted:#68665f;
+    --line:#171717;
+    --accent:#d8ff43;
+    --accent-2:#ff765f;
+    --soft:#e8e4d8;
+    --shadow:5px 5px 0 var(--ink);
+    --mono:"Courier New", Courier, monospace;
+    --sans:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  body.dark{
+    --paper:#111110;
+    --panel:#1c1b18;
+    --ink:#f0ede0;
+    --muted:#9a978c;
+    --line:#f0ede0;
+    --soft:#2a2823;
+    --accent:#d8ff43;
+    --accent-2:#ff765f;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,.04) 0 1px, transparent 1.5px),
+      var(--paper);
+  }
+  body.dark .recipe-thumb{background:#2a2823}
+  body.dark .ingredient-box{background:#161512}
+  body.dark .feed-input{background:#161512}
+  body.dark .search-input{background:#161512}
+  body.dark .ing-input{background:#161512}
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(0,0,0,.025) 0 1px, transparent 1.5px),
+      var(--paper);
+    background-size:7px 7px;
+    color:var(--ink);
+    font-family:var(--sans);
+    transition:background-color .2s, color .2s;
+  }
+  button,input,textarea,select{font:inherit;color:inherit}
+  a{color:inherit}
+
+  .app{
+    width:min(1400px, calc(100% - 24px));
+    margin:12px auto 32px;
+  }
+
+  .window{
+    border:2px solid var(--line);
+    background:var(--panel);
+    box-shadow:var(--shadow);
+  }
+
+  .titlebar{
+    min-height:43px;
+    padding:7px 9px;
+    border-bottom:2px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--ink);
+    color:var(--panel);
+    font-family:var(--mono);
+    font-weight:700;
+    letter-spacing:.03em;
+    position:sticky;
+    top:0;
+    z-index:15;
+  }
+
+  .title-left{display:flex;align-items:center;gap:9px;min-width:0}
+  .app-icon{
+    width:23px;height:23px;
+    display:grid;place-items:center;
+    border:2px solid var(--panel);
+    background:var(--accent);
+    color:#171717;
+    font-size:13px;
+    flex:none;
+  }
+  .title-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .title-meta{font-size:11px;opacity:.72;white-space:nowrap}
+  .title-actions{display:flex;gap:6px;align-items:center}
+  .title-btn{
+    border:1.5px solid var(--panel);
+    background:transparent;
+    color:var(--panel);
+    width:28px;height:26px;
+    cursor:pointer;
+    font-size:13px;
+    display:grid;
+    place-items:center;
+    transition:background .12s;
+  }
+  .title-btn:hover{background:rgba(255,255,255,.12)}
+
+  /* ============ TABS ============ */
+  .tabs{
+    display:flex;
+    border-bottom:2px solid var(--ink);
+    background:var(--panel);
+  }
+  .tab{
+    flex:1;
+    padding:13px 18px;
+    border:none;
+    border-right:2px solid var(--ink);
+    background:var(--panel);
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    cursor:pointer;
+    transition:background .12s;
+    color:var(--ink);
+  }
+  .tab:last-child{border-right:none}
+  .tab:hover{background:var(--soft)}
+  .tab.active{
+    background:var(--accent);
+    color:#171717;
+    box-shadow:inset 0 -3px 0 var(--ink);
+  }
+  .tab .tab-badge{
+    display:inline-block;
+    margin-left:6px;
+    padding:1px 6px;
+    border:1px solid currentColor;
+    font-size:9px;
+    border-radius:2px;
+  }
+
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  .hero{
+    padding:clamp(20px,4vw,42px);
+    display:grid;
+    grid-template-columns:1.25fr .75fr;
+    gap:30px;
+    align-items:end;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .led{
+    width:8px;height:8px;
+    border:1px solid var(--ink);
+    background:var(--accent-2);
+    border-radius:50%;
+    box-shadow:0 0 0 2px var(--panel);
+  }
+  h1{
+    margin:0;
+    max-width:650px;
+    font-family:var(--mono);
+    font-size:clamp(30px,5vw,60px);
+    line-height:.9;
+    letter-spacing:-.07em;
+    text-transform:uppercase;
+  }
+  .hero-copy{
+    margin:16px 0 0;
+    max-width:570px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.55;
+  }
+
+  .terminal{
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    padding:14px;
+    font:12px/1.55 var(--mono);
+  }
+  body.dark .terminal{background:#000;border-color:var(--line)}
+  .terminal-line{display:flex;justify-content:space-between;gap:20px}
+  .terminal-line span:last-child{color:var(--accent)}
+  .cursor{
+    display:inline-block;
+    width:7px;height:13px;
+    background:var(--accent);
+    vertical-align:-2px;
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+
+  /* ============ LAYOUT: SIDEBAR + MAIN ============ */
+  .workspace{
+    border-top:2px solid var(--ink);
+    display:grid;
+    grid-template-columns:280px 1fr;
+    min-height:60vh;
+  }
+  .workspace.no-sidebar{grid-template-columns:1fr}
+
+  .sidebar{
+    border-right:2px solid var(--ink);
+    padding:14px;
+    background:var(--soft);
+    overflow-y:auto;
+    max-height:calc(100vh - 100px);
+    position:sticky;
+    top:96px;
+  }
+  body.dark .sidebar{background:#1c1b18}
+
+  .main-content{
+    padding:clamp(16px,2.5vw,24px);
+    min-width:0;
+  }
+
+  .section-label{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+  }
+  .section-label .count-badge{
+    background:var(--accent);
+    color:#171717;
+    padding:2px 6px;
+    font-size:10px;
+  }
+
+  /* Feeds panel */
+  .feeds-panel h3{
+    margin:0 0 10px;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .feed-input-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .feed-input{
+    border:2px solid var(--ink);
+    background:#fff;
+    padding:8px 9px;
+    font:11px var(--mono);
+    outline:none;
+    width:100%;
+  }
+  .feed-input:focus{outline:3px solid var(--accent);outline-offset:2px;}
+  .feed-add-btn{
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:var(--panel);
+    padding:8px 10px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  body.dark .feed-add-btn{background:var(--accent);color:#171717;border-color:var(--accent)}
+  .feed-hint{
+    font:9px/1.4 var(--mono);
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .feed-list{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    margin-bottom:10px;
+  }
+  .feed-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:1.5px solid var(--ink);
+    background:var(--panel);
+    padding:6px 7px;
+    font:10px var(--mono);
+  }
+  .feed-item .feed-favicon{
+    width:16px;height:16px;
+    border:1px solid var(--ink);
+    flex-shrink:0;
+    object-fit:cover;
+    background:var(--soft);
+  }
+  .feed-item .feed-status{
+    width:7px;height:7px;
+    border-radius:50%;
+    border:1px solid var(--ink);
+    background:#ccc;
+    flex-shrink:0;
+  }
+  .feed-item .feed-status.ok{background:#4caf50}
+  .feed-item .feed-status.error{background:var(--accent-2)}
+  .feed-item .feed-status.loading{background:var(--accent);animation:blink 1s steps(1) infinite}
+  .feed-item .feed-name{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:700;
+  }
+  .feed-item .feed-actions-mini{
+    display:flex;
+    gap:3px;
+    flex-shrink:0;
+  }
+  .feed-item .feed-actions-mini button{
+    border:1px solid var(--ink);
+    background:transparent;
+    width:18px;height:18px;
+    cursor:pointer;
+    font-size:10px;
+    display:grid;
+    place-items:center;
+    padding:0;
+  }
+  .feed-item .feed-actions-mini button:hover{background:var(--accent);color:#171717}
+  .feed-item .feed-actions-mini button.remove:hover{background:var(--accent-2);color:#171717}
+  .feed-empty{
+    font:10px var(--mono);
+    color:var(--muted);
+    text-transform:uppercase;
+    padding:6px 0;
+  }
+  .feed-cats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:3px;
+    margin-top:4px;
+  }
+  .feed-cat-tag{
+    font:9px var(--mono);
+    padding:2px 5px;
+    border:1px solid var(--ink);
+    background:var(--accent);
+    color:#171717;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .feed-cat-tag:hover{background:var(--accent-2)}
+  .feed-actions{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--ink);
+  }
+  .feed-action-btn{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:7px 9px;
+    font:700 9px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    text-align:center;
+  }
+  .feed-action-btn:hover{background:var(--accent);color:#171717}
+  .feed-auto-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font:9px var(--mono);
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .feed-auto-row select{
+    border:1.5px solid var(--ink);
+    background:var(--panel);
+    padding:4px 6px;
+    font:9px var(--mono);
+    flex:1;
+    cursor:pointer;
+  }
+
+  .cat-filter-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px dashed var(--ink);
+  }
+  .cat-filter-chip{
+    border:1.5px solid var(--ink);
+    background:var(--panel);
+    padding:4px 7px;
+    font:9px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .cat-filter-chip.active{background:var(--accent);color:#171717}
+  .cat-filter-chip:hover{background:var(--accent-2);color:#171717}
+
+  /* Filters */
+  .filters-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .filter{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:8px 11px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:transform .08s, background .08s;
+  }
+  .filter:hover{transform:translate(-1px,-1px)}
+  .filter.active{background:var(--accent);box-shadow:2px 2px 0 var(--ink);color:#171717}
+
+  .search-box{
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .search-input{
+    flex:1;
+    border:2px solid var(--ink);
+    background:#fff;
+    padding:9px 11px;
+    font:13px var(--mono);
+    outline:none;
+  }
+  .search-input:focus{outline:3px solid var(--accent);outline-offset:2px;}
+  .search-btn{
+    min-width:110px;
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:var(--panel);
+    padding:9px 14px;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--accent);
+    transition:transform .08s, box-shadow .08s;
+  }
+  body.dark .search-btn{color:#171717;background:var(--accent);border-color:var(--accent);box-shadow:3px 3px 0 var(--accent-2)}
+  .search-btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--accent)}
+
+  .secondary-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:12px;
+    align-items:center;
+  }
+
+  .status{
+    display:none;
+    margin-bottom:12px;
+    border:2px solid var(--ink);
+    padding:9px 11px;
+    font:700 11px var(--mono);
+    background:var(--soft);
+  }
+  .status.show{display:flex;justify-content:space-between;gap:12px}
+  .status .count{background:var(--accent);padding:2px 5px;color:#171717}
+
+  .results-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:end;
+    gap:15px;
+    margin:0 0 12px;
+  }
+  .results-head h2{
+    margin:0;
+    font:700 17px var(--mono);
+    text-transform:uppercase;
+  }
+  .results-head p{margin:4px 0 0;color:var(--muted);font-size:11px}
+  .results-head-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .sort-select{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:6px 8px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+
+  /* Results */
+  .results{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:14px;
+  }
+  .results.grouped{display:block}
+  .source-group{margin-bottom:22px}
+  .source-group-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+    padding-bottom:6px;
+    border-bottom:2px solid var(--ink);
+    font:700 13px var(--mono);
+    text-transform:uppercase;
+  }
+  .source-group-header img{
+    width:18px;height:18px;
+    border:1px solid var(--ink);
+  }
+  .source-group-header .count{
+    background:var(--accent);
+    color:#171717;
+    padding:2px 6px;
+    font-size:10px;
+    margin-left:auto;
+  }
+  .source-group .results{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:14px;
+  }
+
+  .recipe{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    box-shadow:3px 3px 0 var(--ink);
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    overflow:hidden;
+    transition:transform .12s;
+  }
+  .recipe:hover{transform:translate(-2px,-2px)}
+  .recipe.is-read{opacity:.62}
+  .recipe-top{
+    border-bottom:2px solid var(--ink);
+    padding:8px 9px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font:700 10px var(--mono);
+    gap:6px;
+  }
+  .source-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 6px;
+    border:1px solid var(--ink);
+    font:700 9px var(--mono);
+    text-transform:uppercase;
+    max-width:60%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .source-badge img{
+    width:12px;height:12px;
+    flex-shrink:0;
+  }
+  .source-badge.themealdb{background:#e8f5e9;color:#171717}
+  .source-badge.reddit{background:#fff3e0;color:#171717}
+  .source-badge.feed{background:#e3f2fd;color:#171717}
+  .fav{
+    border:1px solid var(--ink);
+    background:transparent;
+    width:24px;height:22px;
+    cursor:pointer;
+    font-size:13px;
+    flex-shrink:0;
+  }
+  .fav.saved{background:var(--accent-2)}
+
+  .recipe-thumb{
+    width:100%;
+    height:150px;
+    border-bottom:2px solid var(--ink);
+    background:var(--soft);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .recipe-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .recipe-thumb .thumb-placeholder{
+    font:700 26px var(--mono);
+    color:var(--muted);
+    opacity:.6;
+    user-select:none;
+  }
+
+  .skeleton{
+    background:linear-gradient(90deg, var(--soft) 25%, rgba(0,0,0,.08) 50%, var(--soft) 75%);
+    background-size:200% 100%;
+    animation:skeleton 1.4s infinite;
+  }
+  body.dark .skeleton{
+    background:linear-gradient(90deg, #2a2823 25%, rgba(255,255,255,.06) 50%, #2a2823 75%);
+    background-size:200% 100%;
+  }
+  @keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .recipe-body{padding:13px;display:flex;flex-direction:column;flex:1}
+  .recipe h3{
+    margin:0 0 6px;
+    font:700 15px/1.2 var(--mono);
+    text-transform:uppercase;
+    letter-spacing:-.02em;
+  }
+  .recipe-date{
+    color:var(--muted);
+    font:10px var(--mono);
+    margin-bottom:9px;
+  }
+  .recipe-excerpt{
+    color:var(--muted);
+    font:11px/1.5 var(--mono);
+    margin-bottom:12px;
+    flex:1;
+    display:-webkit-box;
+    -webkit-line-clamp:4;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .recipe-actions{
+    display:flex;
+    gap:6px;
+    margin-top:auto;
+  }
+  .open-recipe{
+    flex:1;
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:var(--panel);
+    padding:8px;
+    cursor:pointer;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    text-decoration:none;
+    display:block;
+    text-align:center;
+    word-break:break-word;
+  }
+  body.dark .open-recipe{background:var(--accent);color:#171717;border-color:var(--accent)}
+  .mini-btn{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:8px 10px;
+    cursor:pointer;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+  }
+  .mini-btn:hover{background:var(--accent);color:#171717}
+
+  .empty{
+    border:2px dashed var(--ink);
+    padding:36px 18px;
+    text-align:center;
+    background:rgba(255,255,255,.5);
+  }
+  body.dark .empty{background:rgba(255,255,255,.03)}
+  .empty .big{font:700 30px var(--mono);margin-bottom:8px}
+  .empty p{max-width:520px;margin:0 auto;color:var(--muted);font-size:13px;line-height:1.5}
+
+  .footer{
+    margin-top:18px;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    color:var(--muted);
+    font:10px var(--mono);
+    text-transform:uppercase;
+    flex-wrap:wrap;
+    padding-top:14px;
+    border-top:1px dashed var(--ink);
+  }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:18px;
+    transform:translate(-50%,20px);
+    opacity:0;
+    pointer-events:none;
+    z-index:50;
+    border:2px solid var(--ink);
+    background:var(--accent);
+    color:#171717;
+    padding:10px 13px;
+    box-shadow:4px 4px 0 var(--ink);
+    font:700 11px var(--mono);
+    transition:.18s;
+    max-width:calc(100% - 40px);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .saved-panel{
+    display:none;
+    border:2px solid var(--ink);
+    background:var(--soft);
+    padding:12px;
+    margin-bottom:14px;
+  }
+  body.dark .saved-panel{background:#1c1b18}
+  .saved-panel.show{display:block}
+  .saved-panel h3{
+    margin:0 0 10px;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+  }
+  .saved-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:8px;
+  }
+  .saved-item{
+    border:1.5px solid var(--ink);
+    background:var(--panel);
+    padding:7px;
+    display:flex;
+    gap:7px;
+    align-items:center;
+    font:10px var(--mono);
+  }
+  .saved-item img{
+    width:40px;height:40px;
+    object-fit:cover;
+    border:1px solid var(--ink);
+    flex-shrink:0;
+  }
+  .saved-item .saved-title{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:10px;
+  }
+  .saved-item .saved-actions{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .saved-item .saved-actions button{
+    border:1px solid var(--ink);
+    background:var(--panel);
+    width:20px;height:18px;
+    cursor:pointer;
+    font-size:10px;
+    display:grid;
+    place-items:center;
+  }
+  .saved-empty{
+    font:10px var(--mono);
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+
+  .load-more-wrap{
+    grid-column:1/-1;
+    display:flex;
+    justify-content:center;
+    margin-top:14px;
+  }
+  .load-more-btn{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:11px 22px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .load-more-btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  /* ============ EXPLORE TAB: ingredient search ============ */
+  .explore-hero{
+    border-bottom:2px solid var(--ink);
+    padding:clamp(18px,3vw,30px);
+    background:linear-gradient(135deg, #bdbdbd 0%, #f0ffa8 100%);
+    color:#171717;
+  }
+  .explore-hero h2{
+    margin:0 0 6px;
+    font:700 20px var(--mono);
+    text-transform:uppercase;
+    letter-spacing:-.03em;
+  }
+  .explore-hero p{
+    margin:0;
+    font:12px var(--mono);
+    max-width:640px;
+  }
+
+  .ingredient-box{
+    border:2px solid #171717;
+    background:#fff;
+    min-height:80px;
+    padding:10px;
+    display:flex;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:8px;
+    cursor:text;
+    margin-top:14px;
+    position:relative;
+  }
+  .ingredient-box:focus-within{outline:3px solid #171717;outline-offset:2px;}
+  .ing-chips{display:flex;flex-wrap:wrap;gap:7px}
+  .ing-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 8px;
+    border:1.5px solid #171717;
+    background:#d8ff43;
+    color:#171717;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+  }
+  .ing-chip button{
+    width:17px;height:17px;
+    padding:0;
+    border:1px solid #171717;
+    background:#fff;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    line-height:1;
+    color:#171717;
+  }
+  .ing-input{
+    flex:1 1 180px;
+    min-width:140px;
+    border:0;
+    outline:0;
+    background:transparent;
+    padding:7px 4px;
+    font:14px var(--mono);
+    color:#171717;
+  }
+  .ing-hint{
+    width:100%;
+    padding:5px 3px 0;
+    color:#171717;
+    opacity:.7;
+    font:11px var(--mono);
+  }
+  .ing-counter{
+    position:absolute;
+    top:8px;
+    right:10px;
+    font:700 10px var(--mono);
+    color:#171717;
+    opacity:.65;
+  }
+
+  .autocomplete{
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+    background:var(--panel);
+    border:2px solid var(--ink);
+    border-top:none;
+    max-height:180px;
+    overflow-y:auto;
+    z-index:10;
+    display:none;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .autocomplete.show{display:block}
+  .autocomplete-item{
+    padding:7px 12px;
+    font:12px var(--mono);
+    cursor:pointer;
+    text-transform:capitalize;
+    border-bottom:1px solid var(--soft);
+  }
+  .autocomplete-item:last-child{border-bottom:none}
+  .autocomplete-item:hover,
+  .autocomplete-item.active{
+    background:var(--accent);
+    color:#171717;
+  }
+
+  .explore-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+    align-items:center;
+  }
+  .explore-btn{
+    border:2px solid #171717;
+    background:#171717;
+    color:#f2efe5;
+    padding:11px 18px;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    box-shadow:4px 4px 0 #fff;
+    transition:transform .08s, box-shadow .08s;
+  }
+  .explore-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 #fff}
+  .explore-btn:active{transform:translate(4px,4px);box-shadow:none}
+  .explore-btn:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .explore-secondary{
+    border:2px solid #171717;
+    background:#fff;
+    color:#171717;
+    padding:11px 14px;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .explore-secondary:hover{background:#d8ff43}
+
+  .source-toggles{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:12px;
+    align-items:center;
+  }
+  .source-toggles .lbl{
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    color:#171717;
+    opacity:.7;
+    margin-right:4px;
+  }
+  .source-toggle{
+    border:2px solid #171717;
+    background:#fff;
+    padding:5px 9px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    color:#171717;
+  }
+  .source-toggle.active{background:#171717;color:#d8ff43}
+  .source-toggle .dot{
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    margin-right:5px;
+    vertical-align:middle;
+    background:#999;
+  }
+  .source-toggle.active .dot{background:currentColor}
+  .source-toggle[data-src="themealdb"] .dot{background:#4caf50}
+  .source-toggle[data-src="reddit"] .dot{background:#ff4500}
+  .source-toggle[data-src="feeds"] .dot{background:#2196f3}
+
+  .explore-results-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:end;
+    gap:15px;
+    margin:24px 0 12px;
+    padding-top:14px;
+    border-top:2px solid var(--ink);
+  }
+
+  .match-indicator{
+    display:flex;
+    gap:2px;
+    align-items:center;
+  }
+  .match-dot{
+    width:8px;height:8px;
+    border:1px solid var(--ink);
+    border-radius:50%;
+    background:var(--soft);
+  }
+  .match-dot.hit{background:var(--accent)}
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    z-index:100;
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding:20px;
+    overflow-y:auto;
+  }
+  .modal-backdrop.show{display:flex}
+  .modal{
+    background:var(--panel);
+    border:2px solid var(--ink);
+    box-shadow:var(--shadow);
+    width:min(820px, 100%);
+    margin:auto;
+    max-height:calc(100vh - 40px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .modal-header{
+    background:var(--ink);
+    color:var(--panel);
+    padding:10px 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    flex-shrink:0;
+    gap:8px;
+  }
+  .modal-header .modal-title-text{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .modal-close{
+    border:1.5px solid var(--panel);
+    background:transparent;
+    color:var(--panel);
+    width:26px;height:24px;
+    cursor:pointer;
+    font-size:14px;
+    display:grid;
+    place-items:center;
+    flex-shrink:0;
+  }
+  .modal-close:hover{background:rgba(255,255,255,.15)}
+  .modal-body{padding:18px;overflow-y:auto;}
+  .modal-hero{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:18px;
+  }
+  .modal-hero img{
+    width:100%;
+    height:100%;
+    max-height:240px;
+    object-fit:cover;
+    border:2px solid var(--ink);
+  }
+  .modal-hero-info h3{
+    margin:0 0 8px;
+    font:700 20px/1.1 var(--mono);
+    text-transform:uppercase;
+  }
+  .modal-meta{
+    font:11px var(--mono);
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .modal-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:2px solid var(--ink);
+  }
+  .modal-action-btn{
+    border:2px solid var(--ink);
+    background:var(--panel);
+    padding:7px 11px;
+    font:700 10px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-block;
+  }
+  .modal-action-btn:hover{background:var(--accent);color:#171717}
+  .modal-action-btn.primary{background:var(--ink);color:var(--panel)}
+  body.dark .modal-action-btn.primary{background:var(--accent);color:#171717;border-color:var(--accent)}
+
+  .modal-section{margin-bottom:16px;}
+  .modal-section h4{
+    margin:0 0 8px;
+    font:700 12px var(--mono);
+    text-transform:uppercase;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:4px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .modal-section h4 .scale-buttons{display:flex;gap:3px;}
+  .modal-section h4 .scale-buttons button{
+    border:1.5px solid var(--ink);
+    background:var(--panel);
+    padding:2px 7px;
+    font:700 9px var(--mono);
+    cursor:pointer;
+  }
+  .modal-section h4 .scale-buttons button.active{background:var(--accent);color:#171717}
+  .modal-ingredients{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+    gap:5px;
+  }
+  .modal-ing{
+    padding:5px 8px;
+    border:1px solid var(--ink);
+    font:11px var(--mono);
+    background:var(--soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .modal-ing .convert-btn{
+    border:1px solid var(--ink);
+    background:var(--panel);
+    padding:1px 5px;
+    font:700 9px var(--mono);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .modal-ing .convert-btn:hover{background:var(--accent);color:#171717}
+
+  .modal-instructions{
+    font:13px/1.6 var(--sans);
+    white-space:pre-line;
+    color:var(--ink);
+  }
+  .step-item{
+    display:flex;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px dashed var(--soft);
+    font:13px/1.6 var(--sans);
+  }
+  .step-item:last-child{border-bottom:none}
+  .step-num{
+    font:700 11px var(--mono);
+    background:var(--accent);
+    color:#171717;
+    padding:2px 6px;
+    border:1px solid var(--ink);
+    height:fit-content;
+    flex-shrink:0;
+  }
+
+  .modal-enrich-note{
+    font:10px var(--mono);
+    color:var(--muted);
+    text-align:center;
+    padding:8px;
+    border:1px dashed var(--ink);
+    margin-top:10px;
+  }
+
+  /* Mobile */
+  .mobile-search-bar{
+    display:none;
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index:40;
+    background:var(--ink);
+    border-top:2px solid var(--accent);
+    padding:10px 12px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    gap:8px;
+  }
+  .mobile-search-bar button{
+    flex:1;
+    border:2px solid var(--accent);
+    background:var(--accent);
+    color:#171717;
+    padding:11px;
+    font:700 11px var(--mono);
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+
+  @media (max-width:900px){
+    .workspace{grid-template-columns:1fr}
+    .workspace.no-sidebar{grid-template-columns:1fr}
+    .sidebar{
+      position:static;
+      border-right:none;
+      border-bottom:2px solid var(--ink);
+      max-height:none;
+    }
+    .hero{grid-template-columns:1fr;gap:20px}
+    .modal-hero{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    .app{width:calc(100% - 12px);margin:6px auto 90px}
+    .window{box-shadow:3px 3px 0 var(--ink)}
+    .titlebar{min-height:39px}
+    .title-meta{display:none}
+    .hero{padding:22px 15px}
+    h1{font-size:36px}
+    .hero-copy{font-size:12px}
+    .main-content{padding:14px}
+    .results{grid-template-columns:1fr}
+    .results-head{align-items:flex-start;flex-direction:column}
+    .results-head-right{align-items:flex-start}
+    .footer{flex-direction:column}
+    .mobile-search-bar{display:flex}
+    .saved-list{grid-template-columns:1fr}
+    .tab{padding:11px 8px;font-size:10px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="window">
+    <header class="titlebar">
+      <div class="title-left">
+        <div class="app-icon">🍳</div>
+        <div class="title-name">KITCHEN.EXE</div>
+      </div>
+      <div class="title-actions">
+        <button class="title-btn" id="themeToggle" title="Toggle dark mode">◐</button>
+        <div class="title-meta">v5.0 // RSS + EXPLORE</div>
+      </div>
+    </header>
+
+    <!-- ============ TABS ============ -->
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="feeds" role="tab">
+        📡 My Feeds <span class="tab-badge" id="tabFeedCount">0</span>
+      </button>
+      <button class="tab" data-tab="explore" role="tab">
+        🔎 Explore <span class="tab-badge" id="tabExploreBadge">web</span>
+      </button>
+    </nav>
+
+    <!-- ============================================ -->
+    <!-- TAB 1: FEEDS (lo que ya tienes)             -->
+    <!-- ============================================ -->
+    <div class="tab-panel active" id="panel-feeds">
+      <section class="hero">
+        <div>
+          <div class="eyebrow"><span class="led"></span> Personal recipe feed reader</div>
+          <h1>Your recipes,<br> always fresh.</h1>
+        </div>
+        <div class="terminal">
+          <div class="terminal-line"><span>STATUS</span><span>HUNGRY</span></div>
+          <div class="terminal-line"><span>MODE</span><span>EXPERT COOKER</span></div>
+          <div class="terminal-line"><span>SOURCES</span><span id="termFeedCount">0</span></div>
+          <div style="margin-top:10px">READY...<span class="cursor"></span></div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="feeds-panel">
+            <h3>📡 Feeds <span class="count-badge" id="feedCount">0</span></h3>
+            <div class="feed-input-row">
+              <input class="feed-input" id="feedUrlInput" type="url"
+                     placeholder="https://blog.com/feed" autocomplete="off">
+              <button class="feed-add-btn" id="feedAddBtn">+ Add feed</button>
+            </div>
+            <div class="feed-list" id="feedList"></div>
+            <div class="cat-filter-row" id="catFilterRow" style="display:none"></div>
+            <div class="feed-actions">
+              <button class="feed-action-btn" id="refreshFeedsBtn">↻ Refresh all</button>
+              <button class="feed-action-btn" id="exportFeedsBtn">↧ Export feeds</button>
+              <label class="feed-action-btn" style="cursor:pointer">
+                ↥ Import feeds
+                <input type="file" id="importFeedsInput" accept=".json" style="display:none">
+              </label>
+              <div class="feed-auto-row">
+                <span>Auto:</span>
+                <select id="autoRefreshSelect">
+                  <option value="0">Off</option>
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="60">1 hour</option>
+                  <option value="180">3 hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div class="main-content">
+          <div class="section-label">
+            <span>01 // Browse & filter</span>
+            <span id="unreadBadge" class="count-badge" style="display:none">0 UNREAD</span>
+          </div>
+
+          <div class="filters-bar">
+            <button class="filter active" data-filter="all">All</button>
+            <button class="filter" data-filter="healthy">Healthy</button>
+            <button class="filter" data-filter="protein">High protein</button>
+            <button class="filter" data-filter="quick">Under 30 min</button>
+            <button class="filter" data-filter="vegetarian">Vegetarian</button>
+            <button class="filter" data-filter="unread">Unread</button>
+          </div>
+
+          <div class="search-box">
+            <input class="search-input" id="searchInput" type="search"
+                   placeholder="Filter by keyword" autocomplete="off">
+            <button class="search-btn" id="searchBtn">Filter ↗</button>
+          </div>
+
+          <div class="secondary-row">
+            <button class="filter" id="toggleSavedBtn">★ Saved (<span id="savedCountInline">0</span>)</button>
+            <button class="filter" id="toggleGroupBtn">☰ Group by source</button>
+            <button class="filter" id="markAllReadBtn">✓ Mark all read</button>
+          </div>
+
+          <div class="saved-panel" id="savedPanel">
+            <h3>★ Saved recipes (<span id="savedPanelCount">0</span>)</h3>
+            <div class="saved-list" id="savedList"></div>
+          </div>
+
+          <div class="status" id="status">
+            <span id="statusText">READY</span>
+            <span class="count" id="statusCount">0</span>
+          </div>
+
+          <div class="results-head">
+            <div>
+              <h2 id="resultsTitle">Latest from your feeds</h2>
+              <p id="resultsSubtitle">Add feeds in the sidebar, then press "Refresh all".</p>
+            </div>
+            <div class="results-head-right">
+              <select class="sort-select" id="sortSelect">
+                <option value="date">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="title">Title A-Z</option>
+                <option value="source">By source</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="results" id="results">
+            <div class="empty">
+              <div class="big">📡</div>
+              <p>No feeds yet. Add your first RSS feed in the sidebar.</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <span>KITCHEN.EXE</span>
+            <span id="footerStats">0 FEEDS · 0 POSTS</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- TAB 2: EXPLORE (nueva búsqueda por ingredientes) -->
+    <!-- ============================================ -->
+    <div class="tab-panel" id="panel-explore">
+      <div class="explore-hero">
+        <h2>🔎 Explore recipes by ingredients</h2>
+        <p>
+          Add up to <strong>5 ingredients</strong>. We'll search TheMealDB and Reddit's recipe
+          communities in parallel, then rank results by how many of your ingredients they use.
+        </p>
+
+        <div class="ingredient-box" id="ingredientBox">
+          <div class="ing-chips" id="ingChips"></div>
+          <input class="ing-input" id="ingInput" autocomplete="off"
+                 placeholder="type an ingredient>
+          <div class="ing-hint">Press Enter to add</div>
+          <div class="ing-counter" id="ingCounter">0 / 5</div>
+          <div class="autocomplete" id="autocomplete" role="listbox"></div>
+        </div>
+
+        <div class="source-toggles">
+          <span class="lbl">Sources:</span>
+          <button class="source-toggle active" data-src="themealdb"><span class="dot"></span>TheMealDB</button>
+          <button class="source-toggle active" data-src="reddit"><span class="dot"></span>Reddit</button>
+          <button class="source-toggle" data-src="feeds"><span class="dot"></span>My feeds</button>
+        </div>
+
+        <div class="explore-controls">
+          <button class="explore-btn" id="exploreSearchBtn">Search recipes ↗</button>
+          <button class="explore-secondary" id="exploreRandomBtn">🎲 Surprise me</button>
+          <button class="explore-secondary" id="exploreClearBtn">🗑 Clear</button>
+        </div>
+      </div>
+
+      <div class="main-content" style="padding:clamp(16px,2.5vw,24px)">
+        <div class="status" id="exploreStatus">
+          <span id="exploreStatusText">READY</span>
+          <span class="count" id="exploreStatusCount">0</span>
+        </div>
+
+        <div class="explore-results-head">
+          <div>
+            <h2 id="exploreTitle" style="margin:0;font:700 17px var(--mono);text-transform:uppercase">Search results</h2>
+            <p id="exploreSubtitle" style="margin:4px 0 0;color:var(--muted);font-size:11px">Add ingredients and press search.</p>
+          </div>
+          <div class="results-head-right">
+            <select class="sort-select" id="exploreSortSelect">
+              <option value="match">Match (high → low)</option>
+              <option value="title">Title A-Z</option>
+              <option value="source">By source</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="results" id="exploreResults">
+          <div class="empty">
+            <div class="big">🔎</div>
+            <p>
+              Add up to 5 ingredients above, then press <strong>Search recipes</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="footer">
+          <span>KITCHEN.EXE // EXPLORE</span>
+          <span id="exploreFooterStats">0 RESULTS</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <span class="modal-title-text" id="modalTitle">Post</span>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="mobile-search-bar">
+  <button id="mobileRefreshBtn">↻ Refresh</button>
+  <button id="mobileSearchBtn">🔍 Filter</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ============ STATE ============ */
+  const state = {
+    // Feed tab
+    feeds: JSON.parse(localStorage.getItem("kitchenExeFeeds") || "[]"),
+    saved: JSON.parse(localStorage.getItem("kitchenExeSaved") || "[]"),
+    read: JSON.parse(localStorage.getItem("kitchenExeRead") || "[]"),
+    filters: { category: "all", keyword: "", feedCategory: null },
+    sort: "date",
+    groupBySource: false,
+    allPosts: [],
+    visibleCount: 9,
+    enrichQueue: new Set(),
+    autoRefreshTimer: null,
+
+    // Explore tab
+    exploreIngredients: [],
+    exploreResults: [],
+    exploreSort: "match",
+    exploreSources: { themealdb: true, reddit: true, feeds: false },
+    exploreVisible: 12,
+
+    // Global
+    theme: localStorage.getItem("kitchenExeTheme") || "light",
+    autoRefreshMin: parseInt(localStorage.getItem("kitchenExeAutoRefresh") || "0", 10),
+    activeTab: "feeds"
+  };
+
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => document.querySelectorAll(s);
+
+  const feedUrlInput = $("#feedUrlInput");
+  const feedAddBtn = $("#feedAddBtn");
+  const feedList = $("#feedList");
+  const feedCount = $("#feedCount");
+  const termFeedCount = $("#termFeedCount");
+  const results = $("#results");
+  const status = $("#status");
+  const statusText = $("#statusText");
+  const statusCount = $("#statusCount");
+  const resultsTitle = $("#resultsTitle");
+  const resultsSubtitle = $("#resultsSubtitle");
+  const toast = $("#toast");
+  const searchInput = $("#searchInput");
+  const sortSelect = $("#sortSelect");
+  const savedPanel = $("#savedPanel");
+  const savedList = $("#savedList");
+  const modalBackdrop = $("#modalBackdrop");
+  const modalBody = $("#modalBody");
+  const modalTitle = $("#modalTitle");
+  const catFilterRow = $("#catFilterRow");
+  const autoRefreshSelect = $("#autoRefreshSelect");
+
+  // Explore refs
+  const ingInput = $("#ingInput");
+  const ingChips = $("#ingChips");
+  const ingCounter = $("#ingCounter");
+  const autocomplete = $("#autocomplete");
+  const exploreResults = $("#exploreResults");
+  const exploreStatus = $("#exploreStatus");
+  const exploreStatusText = $("#exploreStatusText");
+  const exploreStatusCount = $("#exploreStatusCount");
+  const exploreTitle = $("#exploreTitle");
+  const exploreSubtitle = $("#exploreSubtitle");
+  const exploreSortSelect = $("#exploreSortSelect");
+  const exploreFooterStats = $("#exploreFooterStats");
+
+  const filterTerms = {
+    all: [], healthy: ["healthy","salad","vegetable","vegan","light","fresh"],
+    protein: ["protein","chicken","beef","egg","meat","fish","salmon","tuna","tofu","beans"],
+    quick: ["quick","fast","easy","15-minute","20-minute","30-minute","minute"],
+    vegetarian: ["vegetarian","vegan","meatless","veggie"],
+    unread: []
+  };
+
+  const COMMON_INGREDIENTS = [
+    "chicken","beef","pork","salmon","tuna","shrimp","eggs","tofu","lentils","chickpeas",
+    "beans","rice","pasta","noodles","bread","tortillas","quinoa","couscous","oats","flour",
+    "potatoes","sweet potatoes","tomatoes","onion","garlic","ginger","carrot","broccoli",
+    "spinach","kale","lettuce","cucumber","zucchini","eggplant","peppers","mushrooms",
+    "cauliflower","cabbage","peas","corn","celery","asparagus","beets","pumpkin",
+    "milk","cream","yogurt","cheese","butter","olive oil","vegetable oil","coconut milk",
+    "soy sauce","vinegar","lemon","lime","orange","apple","banana","strawberries",
+    "blueberries","avocado","coconut","almonds","walnuts","peanuts","cashews","sesame",
+    "honey","sugar","salt","pepper","paprika","cumin","coriander","turmeric","oregano",
+    "basil","thyme","rosemary","parsley","cilantro","chili","curry","cinnamon","nutmeg",
+    "chocolate","vanilla","baking powder","baking soda","yeast"
+  ];
+
+  // Reddit recipe subreddits (búsqueda RSS)
+  const REDDIT_SUBS = ["recipes", "cooking", "AskCulinary", "HealthyFood", "eatcheapandhealthy"];
+
+  /* ============ UNIT CONVERSION ============ */
+  const UNIT_CONVERSIONS = {
+    "cup": { ml: 240, oz: 8, tbsp: 16, tsp: 48, label: "cup" },
+    "cups": { ml: 240, oz: 8, tbsp: 16, tsp: 48, label: "cup" },
+    "tablespoon": { ml: 15, oz: 0.5, tsp: 3, cup: 0.0625, label: "tbsp" },
+    "tablespoons": { ml: 15, oz: 0.5, tsp: 3, cup: 0.0625, label: "tbsp" },
+    "tbsp": { ml: 15, oz: 0.5, tsp: 3, cup: 0.0625, label: "tbsp" },
+    "teaspoon": { ml: 5, oz: 0.17, tbsp: 0.33, cup: 0.021, label: "tsp" },
+    "teaspoons": { ml: 5, oz: 0.17, tbsp: 0.33, cup: 0.021, label: "tsp" },
+    "tsp": { ml: 5, oz: 0.17, tbsp: 0.33, cup: 0.021, label: "tsp" },
+    "ml": { cup: 0.0042, oz: 0.034, tbsp: 0.067, tsp: 0.2, label: "ml" },
+    "l": { ml: 1000, cup: 4.2, oz: 33.8, label: "L" },
+    "liter": { ml: 1000, cup: 4.2, oz: 33.8, label: "L" },
+    "liters": { ml: 1000, cup: 4.2, oz: 33.8, label: "L" },
+    "fl oz": { ml: 30, cup: 0.125, tbsp: 2, tsp: 6, label: "fl oz" },
+    "g": { oz: 0.035, lb: 0.0022, kg: 0.001, label: "g" },
+    "gram": { oz: 0.035, lb: 0.0022, kg: 0.001, label: "g" },
+    "grams": { oz: 0.035, lb: 0.0022, kg: 0.001, label: "g" },
+    "kg": { g: 1000, oz: 35.3, lb: 2.2, label: "kg" },
+    "kilogram": { g: 1000, oz: 35.3, lb: 2.2, label: "kg" },
+    "oz": { g: 28.35, lb: 0.0625, kg: 0.028, label: "oz" },
+    "ounce": { g: 28.35, lb: 0.0625, kg: 0.028, label: "oz" },
+    "ounces": { g: 28.35, lb: 0.0625, kg: 0.028, label: "oz" },
+    "lb": { g: 453.6, oz: 16, kg: 0.454, label: "lb" },
+    "pound": { g: 453.6, oz: 16, kg: 0.454, label: "lb" },
+    "pounds": { g: 453.6, oz: 16, kg: 0.454, label: "lb" }
+  };
+
+  function parseQuantity(text) {
+    const m = text.match(/^(\d+(?:\s+\d+\/\d+)?|\d+\/\d+|\d+\.\d+)\s*([a-zA-Z]+)?\s*(.*)$/);
+    if (!m) return null;
+    let qty = 0;
+    const qtyStr = m[1].trim();
+    if (qtyStr.includes(" ")) {
+      const [whole, frac] = qtyStr.split(/\s+/);
+      const [num, den] = frac.split("/").map(Number);
+      qty = parseInt(whole, 10) + (num / den);
+    } else if (qtyStr.includes("/")) {
+      const [num, den] = qtyStr.split("/").map(Number);
+      qty = num / den;
+    } else {
+      qty = parseFloat(qtyStr);
+    }
+    return { qty, unit: (m[2] || "").toLowerCase(), rest: m[3] || "" };
+  }
+
+  function formatQuantity(q) {
+    if (q === Math.floor(q)) return String(q);
+    const fractions = [[0.125,"1/8"],[0.25,"1/4"],[0.333,"1/3"],[0.5,"1/2"],[0.666,"2/3"],[0.75,"3/4"]];
+    const whole = Math.floor(q);
+    const rest = q - whole;
+    for (const [val, label] of fractions) {
+      if (Math.abs(rest - val) < 0.04) return whole ? `${whole} ${label}` : label;
+    }
+    return q.toFixed(2).replace(/\.?0+$/, "");
+  }
+
+  function convertUnit(text, targetUnit) {
+    const parsed = parseQuantity(text);
+    if (!parsed || !parsed.unit) return text;
+    const conv = UNIT_CONVERSIONS[parsed.unit];
+    if (!conv) return text;
+    const factor = conv[targetUnit];
+    if (!factor) return text;
+    return `${formatQuantity(parsed.qty * factor)} ${targetUnit} ${parsed.rest}`.trim();
+  }
+
+  function getAvailableConversions(text) {
+    const parsed = parseQuantity(text);
+    if (!parsed || !parsed.unit) return [];
+    const conv = UNIT_CONVERSIONS[parsed.unit];
+    return conv ? Object.keys(conv) : [];
+  }
+
+  /* ============ ENRICH (og:image + schema.org) ============ */
+  async function enrichPost(post) {
+    if (!post.link || state.enrichQueue.has(post.link)) return;
+    state.enrichQueue.add(post.link);
+    try {
+      const res = await fetch(post.link, { headers: { "Accept": "text/html" } });
+      if (!res.ok) throw new Error("HTTP_" + res.status);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+
+      if (!post.image) {
+        const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content") ||
+                        doc.querySelector('meta[name="twitter:image"]')?.getAttribute("content");
+        if (ogImage) post.image = ogImage;
+      }
+
+      const recipeScripts = [...doc.querySelectorAll('script[type="application/ld+json"]')];
+      for (const script of recipeScripts) {
+        try {
+          const data = JSON.parse(script.textContent);
+          const recipes = Array.isArray(data) ? data : (data["@graph"] || [data]);
+          const recipe = recipes.find(r =>
+            r && (r["@type"] === "Recipe" || (Array.isArray(r["@type"]) && r["@type"].includes("Recipe")))
+          );
+          if (recipe) { post.recipe = extractRecipeFromSchema(recipe); break; }
+        } catch {}
+      }
+
+      if (!post.favicon) {
+        const iconLink = doc.querySelector('link[rel="icon"]') ||
+                         doc.querySelector('link[rel="shortcut icon"]') ||
+                         doc.querySelector('link[rel="apple-touch-icon"]');
+        if (iconLink) {
+          try { post.favicon = new URL(iconLink.getAttribute("href"), post.link).href; } catch {}
+        }
+      }
+
+      post.enriched = true;
+    } catch (err) {
+      post.enriched = true;
+    }
+  }
+
+  function extractRecipeFromSchema(recipe) {
+    const ingredients = Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [];
+    const instructions = [];
+    const rawInst = recipe.recipeInstructions || [];
+    (Array.isArray(rawInst) ? rawInst : [rawInst]).forEach(inst => {
+      if (typeof inst === "string") instructions.push(inst);
+      else if (inst && inst["@type"] === "HowToSection") {
+        (inst.itemListElement || []).forEach(sub => {
+          if (sub.text) instructions.push(sub.text);
+          else if (sub.name) instructions.push(sub.name);
+        });
+      } else if (inst && inst.text) instructions.push(inst.text);
+      else if (inst && inst.name) instructions.push(inst.name);
+    });
+
+    const parseDuration = (iso) => {
+      if (!iso) return "";
+      const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+      if (!m) return "";
+      const h = parseInt(m[1] || "0", 10), min = parseInt(m[2] || "0", 10);
+      if (h && min) return `${h}h ${min}m`;
+      if (h) return `${h}h`;
+      if (min) return `${min}m`;
+      return "";
+    };
+
+    const image = Array.isArray(recipe.image) ? recipe.image[0] :
+                  (typeof recipe.image === "object" ? recipe.image.url : recipe.image);
+
+    return {
+      ingredients, instructions,
+      totalTime: parseDuration(recipe.totalTime),
+      prepTime: parseDuration(recipe.prepTime),
+      cookTime: parseDuration(recipe.cookTime),
+      servings: recipe.recipeYield || "",
+      image: image || ""
+    };
+  }
+
+  /* ============ UTILS ============ */
+  function escapeHtml(v) {
+    return String(v).replace(/[&<>"']/g, ch => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[ch]));
+  }
+
+  function stripHtml(html) {
+    if (!html) return "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || "").replace(/\s+/g, " ").trim();
+  }
+
+  function showToast(msg, ms = 1800) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), ms);
+  }
+
+  function timeAgo(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    if (isNaN(d)) return "";
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60) return "just now";
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    if (diff < 86400 * 30) return Math.floor(diff / 86400) + "d ago";
+    return d.toLocaleDateString();
+  }
+
+  function feedFavicon(feed) {
+    if (feed.favicon) return feed.favicon;
+    try {
+      const u = new URL(feed.url);
+      return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+    } catch { return ""; }
+  }
+
+  /* ============ THEME ============ */
+  function applyTheme() {
+    document.body.classList.toggle("dark", state.theme === "dark");
+  }
+  $("#themeToggle").addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    localStorage.setItem("kitchenExeTheme", state.theme);
+    applyTheme();
+  });
+  applyTheme();
+
+  /* ============ TABS ============ */
+  $$(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.tab;
+      state.activeTab = target;
+      $$(".tab").forEach(t => t.classList.toggle("active", t === tab));
+      $$(".tab-panel").forEach(p => {
+        p.classList.toggle("active", p.id === "panel-" + target);
+      });
+    });
+  });
+
+  /* ============================================================ */
+  /* ============ FEED TAB ====================================== */
+  /* ============================================================ */
+
+  function saveFeeds() {
+    localStorage.setItem("kitchenExeFeeds", JSON.stringify(state.feeds));
+    updateFeedCount();
+  }
+
+  function updateFeedCount() {
+    feedCount.textContent = state.feeds.length;
+    termFeedCount.textContent = state.feeds.length;
+    $("#tabFeedCount").textContent = state.feeds.length;
+    updateFooterStats();
+  }
+
+  function updateFooterStats() {
+    $("#footerStats").textContent = `${state.feeds.length} FEEDS · ${state.allPosts.length} POSTS`;
+  }
+
+  function renderFeeds() {
+    if (!state.feeds.length) {
+      feedList.innerHTML = `<div class="feed-empty">No feeds yet.</div>`;
+    } else {
+      feedList.innerHTML = state.feeds.map((f, i) => {
+        const fav = feedFavicon(f);
+        const cats = f.categories || [];
+        return `
+          <div class="feed-item" data-index="${i}">
+            <span class="feed-status ${f.status || ""}"></span>
+            ${fav ? `<img class="feed-favicon" src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
+            <span class="feed-name" title="${escapeHtml(f.title || f.url)}">${escapeHtml(f.title || f.url)}</span>
+            <div class="feed-actions-mini">
+              <button data-rename="${i}" title="Rename">✎</button>
+              <button data-cat="${i}" title="Categories">🏷</button>
+              <button class="remove" data-remove="${i}" title="Remove">×</button>
+            </div>
+          </div>
+          ${cats.length ? `<div class="feed-cats">${cats.map(c => `<span class="feed-cat-tag" data-cat-filter="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join("")}</div>` : ""}
+        `;
+      }).join("");
+    }
+
+    feedList.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.feeds.splice(parseInt(btn.dataset.remove, 10), 1);
+        saveFeeds(); renderFeeds(); rebuildAllPosts(); renderResults(); renderCatFilters();
+        showToast("FEED REMOVED");
+      });
+    });
+
+    feedList.querySelectorAll("[data-rename]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const feed = state.feeds[parseInt(btn.dataset.rename, 10)];
+        const newName = prompt("Feed name:", feed.title || feed.url);
+        if (newName !== null && newName.trim()) {
+          feed.title = newName.trim();
+          saveFeeds(); renderFeeds(); renderResults();
+          showToast("RENAMED");
+        }
+      });
+    });
+
+    feedList.querySelectorAll("[data-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const feed = state.feeds[parseInt(btn.dataset.cat, 10)];
+        const current = (feed.categories || []).join(", ");
+        const input = prompt("Categories (comma-separated):", current);
+        if (input !== null) {
+          feed.categories = input.split(",").map(c => c.trim()).filter(Boolean);
+          saveFeeds(); renderFeeds(); renderCatFilters();
+          showToast("CATEGORIES SAVED");
+        }
+      });
+    });
+
+    feedList.querySelectorAll("[data-cat-filter]").forEach(el => {
+      el.addEventListener("click", () => {
+        const cat = el.dataset.catFilter;
+        state.filters.feedCategory = state.filters.feedCategory === cat ? null : cat;
+        renderCatFilters(); renderResults();
+      });
+    });
+  }
+
+  function renderCatFilters() {
+    const cats = new Set();
+    state.feeds.forEach(f => (f.categories || []).forEach(c => cats.add(c)));
+    if (!cats.size) { catFilterRow.style.display = "none"; return; }
+    catFilterRow.style.display = "flex";
+    catFilterRow.innerHTML = [...cats].map(c =>
+      `<span class="cat-filter-chip ${state.filters.feedCategory === c ? "active" : ""}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`
+    ).join("");
+    catFilterRow.querySelectorAll("[data-cat]").forEach(el => {
+      el.addEventListener("click", () => {
+        const cat = el.dataset.cat;
+        state.filters.feedCategory = state.filters.feedCategory === cat ? null : cat;
+        renderCatFilters(); renderResults();
+      });
+    });
+  }
+
+  function addFeed() {
+    let url = feedUrlInput.value.trim();
+    if (!url) { showToast("PASTE A FEED URL FIRST"); return; }
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    try {
+      const u = new URL(url);
+      if (u.hostname.endsWith("substack.com") && u.pathname === "/") url = u.origin + "/feed";
+    } catch {}
+    if (state.feeds.some(f => f.url === url)) { showToast("FEED ALREADY ADDED"); return; }
+    state.feeds.push({ url, title: "", status: "loading", categories: [] });
+    feedUrlInput.value = "";
+    saveFeeds(); renderFeeds();
+    showToast("FEED ADDED — FETCHING…");
+    fetchFeed(state.feeds.length - 1).then(() => {
+      renderFeeds(); renderCatFilters(); renderResults();
+    });
+  }
+
+  function parseFeed(xmlText, feedUrl) {
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    if (doc.querySelector("parsererror")) throw new Error("INVALID_XML");
+    const isAtom = doc.documentElement.tagName.toLowerCase() === "feed";
+    return isAtom ? parseAtom(doc, feedUrl) : parseRss(doc, feedUrl);
+  }
+
+  function parseRss(doc, feedUrl) {
+    const channel = doc.querySelector("channel");
+    if (!channel) throw new Error("NO_CHANNEL");
+    const feedTitle = channel.querySelector("title")?.textContent?.trim() || feedUrl;
+    const feedLink = channel.querySelector("link")?.textContent?.trim() || feedUrl;
+    const items = [...channel.querySelectorAll("item")];
+    const posts = items.map(item => extractPostRss(item, feedTitle, feedLink, feedUrl));
+    return { feedTitle, feedLink, posts };
+  }
+
+  function extractPostRss(item, feedTitle, feedLink, feedUrl) {
+    const title = item.querySelector("title")?.textContent?.trim() || "(no title)";
+    const link = item.querySelector("link")?.textContent?.trim() || "";
+    const description = item.querySelector("description")?.textContent || "";
+    const content = item.querySelector("content\\:encoded")?.textContent ||
+                    item.querySelector("encoded")?.textContent || description;
+    const pubDate = item.querySelector("pubDate")?.textContent?.trim() || "";
+    const author = item.querySelector("author")?.textContent?.trim() ||
+                   item.querySelector("dc\\:creator")?.textContent?.trim() || "";
+    let image = "";
+    const enclosure = item.querySelector("enclosure[type^='image']");
+    if (enclosure) image = enclosure.getAttribute("url");
+    if (!image) {
+      const mediaContent = item.querySelector("media\\:content") || item.querySelector("content[url]");
+      if (mediaContent) image = mediaContent.getAttribute("url");
+    }
+    if (!image) {
+      const mediaThumb = item.querySelector("media\\:thumbnail");
+      if (mediaThumb) image = mediaThumb.getAttribute("url");
+    }
+    if (!image && content) {
+      const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) image = match[1];
+    }
+    if (!image && description) {
+      const match = description.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) image = match[1];
+    }
+    return {
+      title, link, image,
+      excerpt: stripHtml(description).slice(0, 240),
+      content: stripHtml(content).slice(0, 2000),
+      date: pubDate ? new Date(pubDate).toISOString() : "",
+      author, feedTitle, feedLink, feedUrl
+    };
+  }
+
+  function parseAtom(doc, feedUrl) {
+    const feedTitle = doc.querySelector("feed > title")?.textContent?.trim() || feedUrl;
+    const feedLinkEl = doc.querySelector("feed > link[rel='alternate']") || doc.querySelector("feed > link");
+    const feedLink = feedLinkEl?.getAttribute("href") || feedUrl;
+    const entries = [...doc.querySelectorAll("entry")];
+    const posts = entries.map(entry => extractPostAtom(entry, feedTitle, feedLink, feedUrl));
+    return { feedTitle, feedLink, posts };
+  }
+
+  function extractPostAtom(entry, feedTitle, feedLink, feedUrl) {
+    const title = entry.querySelector("title")?.textContent?.trim() || "(no title)";
+    const linkEl = entry.querySelector("link[rel='alternate']") || entry.querySelector("link");
+    const link = linkEl?.getAttribute("href") || "";
+    const summary = entry.querySelector("summary")?.textContent || "";
+    const content = entry.querySelector("content")?.textContent || summary;
+    const updated = entry.querySelector("updated")?.textContent?.trim() ||
+                    entry.querySelector("published")?.textContent?.trim() || "";
+    const author = entry.querySelector("author > name")?.textContent?.trim() || "";
+    let image = "";
+    const enclosure = entry.querySelector("link[rel='enclosure'][type^='image']");
+    if (enclosure) image = enclosure.getAttribute("href");
+    if (!image && content) {
+      const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) image = match[1];
+    }
+    return {
+      title, link, image,
+      excerpt: stripHtml(summary).slice(0, 240),
+      content: stripHtml(content).slice(0, 2000),
+      date: updated ? new Date(updated).toISOString() : "",
+      author, feedTitle, feedLink, feedUrl
+    };
+  }
+
+  async function fetchFeed(index) {
+    const feed = state.feeds[index];
+    if (!feed) return;
+    feed.status = "loading";
+    renderFeeds();
+    try {
+      const res = await fetch(feed.url, {
+        headers: { "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*" }
+      });
+      if (!res.ok) throw new Error("HTTP_" + res.status);
+      const text = await res.text();
+      const parsed = parseFeed(text, feed.url);
+      feed.title = feed.title || parsed.feedTitle;
+      feed.status = "ok";
+      feed.posts = parsed.posts;
+      feed.lastFetched = Date.now();
+    } catch (err) {
+      feed.status = "error";
+      feed.posts = feed.posts || [];
+      feed.error = String(err.message || err);
+    }
+    saveFeeds(); renderFeeds(); rebuildAllPosts();
+  }
+
+  async function refreshAllFeeds() {
+    if (!state.feeds.length) { showToast("ADD A FEED FIRST"); return; }
+    status.classList.add("show");
+    statusText.textContent = "FETCHING FEEDS…";
+    statusCount.textContent = state.feeds.length;
+    state.feeds.forEach(f => f.status = "loading");
+    renderFeeds();
+    await Promise.all(state.feeds.map((_, i) => fetchFeed(i)));
+    statusText.textContent = "FEEDS UPDATED";
+    statusCount.textContent = state.allPosts.length;
+    rebuildAllPosts(); renderResults();
+    showToast("FEEDS REFRESHED");
+  }
+
+  function rebuildAllPosts() {
+    const posts = [];
+    state.feeds.forEach(feed => {
+      if (feed.posts) feed.posts.forEach(p => posts.push(p));
+    });
+    state.allPosts = posts;
+    updateFooterStats();
+    updateUnreadBadge();
+  }
+
+  function updateUnreadBadge() {
+    const unread = state.allPosts.filter(p => !state.read.includes(p.link)).length;
+    const badge = $("#unreadBadge");
+    if (unread > 0) {
+      badge.textContent = `${unread} UNREAD`;
+      badge.style.display = "inline-block";
+    } else {
+      badge.style.display = "none";
+    }
+  }
+
+  function filterPosts(posts, forceFeedUrl = null) {
+    let filtered = posts;
+    if (state.filters.category !== "all" && state.filters.category !== "unread") {
+      const keywords = filterTerms[state.filters.category] || [];
+      filtered = filtered.filter(p => {
+        const hay = (p.title + " " + p.excerpt).toLowerCase();
+        return keywords.some(k => hay.includes(k));
+      });
+    }
+    if (state.filters.category === "unread") {
+      filtered = filtered.filter(p => !state.read.includes(p.link));
+    }
+    if (state.filters.keyword) {
+      const kw = state.filters.keyword.toLowerCase();
+      filtered = filtered.filter(p => (p.title + " " + p.excerpt).toLowerCase().includes(kw));
+    }
+    if (state.filters.feedCategory) {
+      const feedsWithCat = state.feeds.filter(f => (f.categories || []).includes(state.filters.feedCategory));
+      const urls = new Set(feedsWithCat.map(f => f.url));
+      filtered = filtered.filter(p => urls.has(p.feedUrl));
+    }
+    if (forceFeedUrl) filtered = filtered.filter(p => p.feedUrl === forceFeedUrl);
+    return filtered;
+  }
+
+  function sortPosts(posts) {
+    const copy = [...posts];
+    if (state.sort === "date") copy.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    else if (state.sort === "oldest") copy.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    else if (state.sort === "title") copy.sort((a, b) => a.title.localeCompare(b.title));
+    else if (state.sort === "source") copy.sort((a, b) => (a.feedTitle || "").localeCompare(b.feedTitle || ""));
+    return copy;
+  }
+
+  function renderResults(forceFeedUrl = null) {
+    if (!state.feeds.length) {
+      results.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">📡</div><p>No feeds yet. Add your first RSS feed in the sidebar, then press "Refresh all".</p></div>`;
+      resultsTitle.textContent = "Latest from your feeds";
+      resultsSubtitle.textContent = "Add feeds in the sidebar, then press \"Refresh all\".";
+      return;
+    }
+    if (!state.allPosts.length) {
+      const loading = state.feeds.some(f => f.status === "loading");
+      results.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">${loading ? "⏳" : "📭"}</div><p>${loading ? "Fetching your feeds…" : "No posts found. Try refreshing the feeds."}</p></div>`;
+      return;
+    }
+    const filtered = filterPosts(state.allPosts, forceFeedUrl);
+    const sorted = sortPosts(filtered);
+    resultsTitle.textContent = (state.filters.keyword || state.filters.category !== "all" || forceFeedUrl) ? "Filtered results" : "Latest from your feeds";
+    resultsSubtitle.textContent = `${filtered.length} post${filtered.length === 1 ? "" : "s"} · ${state.feeds.length} feeds`;
+    if (!filtered.length) {
+      results.classList.remove("grouped");
+      results.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No posts match your filters. Try clearing them.</p></div>`;
+      return;
+    }
+    if (state.groupBySource) renderGrouped(sorted); else renderFlat(sorted);
+  }
+
+  function renderFlat(sorted) {
+    results.classList.remove("grouped");
+    const toRender = sorted.slice(0, state.visibleCount);
+    results.innerHTML = toRender.map(cardHtml).join("") + loadMoreHtml(sorted.length, toRender.length);
+    attachCardEvents();
+  }
+
+  function renderGrouped(sorted) {
+    results.classList.add("grouped");
+    const groups = {};
+    sorted.forEach(p => {
+      const key = p.feedUrl;
+      if (!groups[key]) groups[key] = { title: p.feedTitle, url: p.feedUrl, posts: [] };
+      groups[key].posts.push(p);
+    });
+    let html = "";
+    Object.values(groups).forEach(g => {
+      const feed = state.feeds.find(f => f.url === g.url);
+      const fav = feed ? feedFavicon(feed) : "";
+      html += `
+        <div class="source-group">
+          <div class="source-group-header">
+            ${fav ? `<img src="${escapeHtml(fav)}" alt="">` : ""}
+            <span>${escapeHtml(g.title || "Feed")}</span>
+            <span class="count">${g.posts.length}</span>
+          </div>
+          <div class="results">${g.posts.slice(0, state.visibleCount).map(cardHtml).join("")}</div>
+        </div>
+      `;
+    });
+    results.innerHTML = html;
+    attachCardEvents();
+  }
+
+  function cardHtml(post) {
+    const isSaved = state.saved.some(s => s.url === post.link);
+    const isRead = state.read.includes(post.link);
+    const feed = state.feeds.find(f => f.url === post.feedUrl);
+    const fav = feed ? feedFavicon(feed) : "";
+    const hasRecipe = post.recipe && post.recipe.ingredients?.length;
+    return `
+      <article class="recipe ${isRead ? "is-read" : ""}" data-url="${escapeHtml(post.link)}">
+        <div class="recipe-top">
+          <span class="source-badge feed" title="${escapeHtml(post.feedTitle || "")}">
+            ${fav ? `<img src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
+            ${escapeHtml((post.feedTitle || "Feed").slice(0, 22))}
+          </span>
+          <button class="fav ${isSaved ? "saved" : ""}" type="button">${isSaved ? "★" : "☆"}</button>
+        </div>
+        <div class="recipe-thumb">
+          ${post.image ? `<img src="${escapeHtml(post.image)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
+        </div>
+        <div class="recipe-body">
+          <h3>${escapeHtml(post.title)}</h3>
+          <div class="recipe-date">${post.date ? timeAgo(post.date) : ""}${post.author ? " · " + escapeHtml(post.author) : ""}${hasRecipe ? " · 📖 recipe" : ""}</div>
+          <div class="recipe-excerpt">${escapeHtml(post.excerpt || "No description")}</div>
+          <div class="recipe-actions">
+            <a class="open-recipe" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" data-mark-read>Read ↗</a>
+            <button class="mini-btn" data-open-detail title="Details">📖</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function loadMoreHtml(total, shown) {
+    const remaining = total - shown;
+    if (remaining <= 0) return "";
+    return `<div class="load-more-wrap"><button class="load-more-btn" id="loadMoreBtn">Load ${Math.min(9, remaining)} more ↓ (${remaining} left)</button></div>`;
+  }
+
+  function attachCardEvents() {
+    results.querySelectorAll(".fav").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const article = btn.closest(".recipe");
+        const post = state.allPosts.find(p => p.link === article.dataset.url);
+        if (post) toggleSaved(post);
+        btn.classList.toggle("saved");
+        btn.textContent = btn.classList.contains("saved") ? "★" : "☆";
+      });
+    });
+    results.querySelectorAll("[data-mark-read]").forEach(a => {
+      a.addEventListener("click", () => {
+        const url = a.closest(".recipe").dataset.url;
+        if (!state.read.includes(url)) {
+          state.read.push(url);
+          localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+          updateUnreadBadge();
+        }
+      });
+    });
+    results.querySelectorAll("[data-open-detail]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const article = btn.closest(".recipe");
+        const post = state.allPosts.find(p => p.link === article.dataset.url);
+        if (post) await openPostModal(post);
+      });
+    });
+    const lmBtn = document.getElementById("loadMoreBtn");
+    if (lmBtn) {
+      lmBtn.addEventListener("click", () => {
+        state.visibleCount += 9;
+        renderResults();
+      });
+    }
+  }
+
+  function toggleSaved(post) {
+    const idx = state.saved.findIndex(s => s.url === post.link);
+    if (idx >= 0) {
+      state.saved.splice(idx, 1);
+      showToast("REMOVED FROM SAVED");
+    } else {
+      state.saved.push({
+        url: post.link, title: post.title,
+        imageUrl: post.image || "",
+        source: post.feedTitle || "",
+        savedAt: Date.now()
+      });
+      showToast("SAVED");
+    }
+    localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+    renderSavedPanel();
+  }
+
+  function renderSavedPanel() {
+    const count = state.saved.length;
+    $("#savedCountInline").textContent = count;
+    $("#savedPanelCount").textContent = count;
+    if (!count) {
+      savedList.innerHTML = `<div class="saved-empty">No saved posts yet. Tap ★ on any card.</div>`;
+      return;
+    }
+    savedList.innerHTML = state.saved.map((s, i) => `
+      <div class="saved-item">
+        ${s.imageUrl ? `<img src="${escapeHtml(s.imageUrl)}" alt="" onerror="this.style.display='none'">` : `<div style="width:40px;height:40px;border:1px solid var(--ink);background:var(--soft);flex-shrink:0"></div>`}
+        <div class="saved-title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}</div>
+        <div class="saved-actions">
+          <button data-open="${i}">↗</button>
+          <button data-remove-saved="${i}">×</button>
+        </div>
+      </div>
+    `).join("");
+    savedList.querySelectorAll("[data-open]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const s = state.saved[parseInt(btn.dataset.open, 10)];
+        if (s) window.open(s.url, "_blank", "noopener,noreferrer");
+      });
+    });
+    savedList.querySelectorAll("[data-remove-saved]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.saved.splice(parseInt(btn.dataset.removeSaved, 10), 1);
+        localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+        renderSavedPanel(); renderResults();
+      });
+    });
+  }
+
+  /* ============================================================ */
+  /* ============ EXPLORE TAB =================================== */
+  /* ============================================================ */
+
+  let acIndex = -1;
+
+  function renderExploreIngredients() {
+    ingChips.innerHTML = state.exploreIngredients.map((item, i) => `
+      <span class="ing-chip">
+        ${escapeHtml(item)}
+        <button type="button" data-remove-ing="${i}">×</button>
+      </span>
+    `).join("");
+    ingChips.querySelectorAll("[data-remove-ing]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.exploreIngredients.splice(parseInt(btn.dataset.removeIng, 10), 1);
+        renderExploreIngredients();
+      });
+    });
+    ingCounter.textContent = `${state.exploreIngredients.length} / 5`;
+  }
+
+  function addExploreIngredient(raw) {
+    if (state.exploreIngredients.length >= 5) {
+      showToast("MAX 5 INGREDIENTS");
+      return;
+    }
+    raw.split(",").map(v => v.trim().toLowerCase()).filter(Boolean).forEach(item => {
+      if (state.exploreIngredients.length >= 5) return;
+      if (!state.exploreIngredients.includes(item)) state.exploreIngredients.push(item);
+    });
+    ingInput.value = "";
+    autocomplete.classList.remove("show");
+    renderExploreIngredients();
+  }
+
+  function showAutocomplete(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) { autocomplete.classList.remove("show"); return; }
+    const matches = COMMON_INGREDIENTS
+      .filter(i => i.includes(q) && !state.exploreIngredients.includes(i))
+      .slice(0, 8);
+    if (!matches.length) { autocomplete.classList.remove("show"); return; }
+    autocomplete.innerHTML = matches.map((m, i) =>
+      `<div class="autocomplete-item ${i === acIndex ? "active" : ""}" data-value="${escapeHtml(m)}">${escapeHtml(m)}</div>`
+    ).join("");
+    autocomplete.classList.add("show");
+    autocomplete.querySelectorAll(".autocomplete-item").forEach(el => {
+      el.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        addExploreIngredient(el.dataset.value);
+      });
+    });
+  }
+
+  ingInput.addEventListener("input", () => {
+    acIndex = -1;
+    showAutocomplete(ingInput.value);
+  });
+  ingInput.addEventListener("blur", () => {
+    setTimeout(() => autocomplete.classList.remove("show"), 120);
+  });
+  ingInput.addEventListener("keydown", (e) => {
+    const items = autocomplete.querySelectorAll(".autocomplete-item");
+    if (autocomplete.classList.contains("show") && items.length) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        acIndex = Math.min(acIndex + 1, items.length - 1);
+        items.forEach((it, i) => it.classList.toggle("active", i === acIndex));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        acIndex = Math.max(acIndex - 1, 0);
+        items.forEach((it, i) => it.classList.toggle("active", i === acIndex));
+        return;
+      }
+      if (e.key === "Enter" && acIndex >= 0) {
+        e.preventDefault();
+        addExploreIngredient(items[acIndex].dataset.value);
+        return;
+      }
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addExploreIngredient(ingInput.value);
+    }
+    if (e.key === "Backspace" && !ingInput.value && state.exploreIngredients.length) {
+      state.exploreIngredients.pop();
+      renderExploreIngredients();
+    }
+    if (e.key === "Escape") {
+      ingInput.value = "";
+      autocomplete.classList.remove("show");
+    }
+  });
+
+  $("#ingredientBox").addEventListener("click", (e) => {
+    if (!e.target.closest("button")) ingInput.focus();
+  });
+
+  // Source toggles
+  $$(".source-toggle").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const src = btn.dataset.src;
+      state.exploreSources[src] = !state.exploreSources[src];
+      btn.classList.toggle("active", state.exploreSources[src]);
+    });
+  });
+
+  /* ---------- TheMealDB ---------- */
+  async function searchTheMealDBIngredient(ingredient) {
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`);
+      if (!res.ok) throw new Error("HTTP_" + res.status);
+      const data = await res.json();
+      if (!data.meals) return [];
+      return data.meals.map(m => ({
+        id: "themealdb-" + m.idMeal,
+        title: m.strMeal,
+        image: m.strMealThumb,
+        link: `https://www.themealdb.com/meal/${m.idMeal}`,
+        source: "themealdb",
+        sourceLabel: "TheMealDB",
+        sourceBadgeClass: "themealdb",
+        matchedIngredients: [ingredient],
+        allIngredients: [], // se rellena al hacer lookup
+        mealId: m.idMeal
+      }));
+    } catch (err) {
+      console.warn("TheMealDB error:", ingredient, err);
+      return [];
+    }
+  }
+
+  async function hydrateMealDBRecipe(item) {
+    if (item.allIngredients.length) return item;
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.mealId}`);
+      const data = await res.json();
+      const meal = data.meals?.[0];
+      if (!meal) return item;
+      const ings = [];
+      for (let i = 1; i <= 20; i++) {
+        const name = (meal["strIngredient" + i] || "").trim();
+        const measure = (meal["strMeasure" + i] || "").trim();
+        if (name) ings.push({ name: name.toLowerCase(), display: `${measure} ${name}`.trim() });
+      }
+      item.allIngredients = ings;
+      item.meal = meal;
+      return item;
+    } catch { return item; }
+  }
+
+  /* ---------- Reddit RSS ---------- */
+  async function searchReddit(query) {
+    const results = [];
+    // Buscamos en paralelo en todos los subreddits
+    const fetches = REDDIT_SUBS.map(async (sub) => {
+      try {
+        const url = `https://www.reddit.com/r/${sub}/search.rss?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=year`;
+        const res = await fetch(url, { headers: { "Accept": "application/rss+xml, application/atom+xml, */*" } });
+        if (!res.ok) return [];
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, "application/xml");
+        const entries = [...doc.querySelectorAll("entry")];
+        return entries.map(entry => {
+          const title = entry.querySelector("title")?.textContent?.trim() || "";
+          const linkEl = entry.querySelector("link");
+          const link = linkEl?.getAttribute("href") || "";
+          const content = entry.querySelector("content")?.textContent || "";
+          const updated = entry.querySelector("updated")?.textContent || "";
+          let image = "";
+          const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+          if (imgMatch) image = imgMatch[1];
+          // Ignorar posts sin link real
+          if (!link || !link.startsWith("http")) return null;
+          return {
+            id: "reddit-" + link,
+            title,
+            image,
+            link,
+            source: "reddit",
+            sourceLabel: "r/" + sub,
+            sourceBadgeClass: "reddit",
+            matchedIngredients: [query],
+            allIngredients: [],
+            excerpt: stripHtml(content).slice(0, 240),
+            date: updated ? new Date(updated).toISOString() : "",
+            subreddit: sub
+          };
+        }).filter(Boolean);
+      } catch { return []; }
+    });
+    const all = await Promise.all(fetches);
+    all.forEach(arr => results.push(...arr));
+    return results;
+  }
+
+  /* ---------- Feeds search ---------- */
+  function searchInFeeds(query) {
+    const q = query.toLowerCase();
+    return state.allPosts.filter(p =>
+      (p.title + " " + p.excerpt).toLowerCase().includes(q)
+    ).map(p => ({
+      id: "feed-" + p.link,
+      title: p.title,
+      image: p.image,
+      link: p.link,
+      source: "feed",
+      sourceLabel: p.feedTitle || "Feed",
+      sourceBadgeClass: "feed",
+      matchedIngredients: [query],
+      allIngredients: [],
+      excerpt: p.excerpt,
+      date: p.date,
+      post: p
+    }));
+  }
+
+  /* ---------- Merge & rank ---------- */
+  function mergeAndRank(allResults, ingredients) {
+    const byKey = new Map();
+
+    allResults.forEach(item => {
+      const key = item.link || item.id;
+      if (!byKey.has(key)) {
+        byKey.set(key, { ...item, matchedIngredients: [...item.matchedIngredients] });
+      } else {
+        const existing = byKey.get(key);
+        // Fusionar ingredientes coincidentes
+        item.matchedIngredients.forEach(ing => {
+          if (!existing.matchedIngredients.includes(ing)) existing.matchedIngredients.push(ing);
+        });
+      }
+    });
+
+    // Ahora, para TheMealDB, comprobamos cuántos de los ingredientes del usuario
+    // aparecen realmente en la receta hidratada. Pero eso requiere lookup → lo
+    // hacemos solo para los que ya tienen meal hidratado.
+    const merged = [...byKey.values()];
+
+    merged.forEach(item => {
+      // Score base: número de ingredientes del usuario que matchearon en la búsqueda
+      let score = item.matchedIngredients.length;
+      // Bonus si la receta contiene más ingredientes del usuario
+      if (item.allIngredients?.length) {
+        const userSet = ingredients.map(i => i.toLowerCase());
+        let extraHits = 0;
+        item.allIngredients.forEach(ri => {
+          const already = item.matchedIngredients.some(m => ri.name.includes(m));
+          if (already) return;
+          const hit = userSet.some(u => ri.name.includes(u) || u.includes(ri.name));
+          if (hit) extraHits++;
+        });
+        score += extraHits;
+      }
+      item.score = score;
+    });
+
+    return merged;
+  }
+
+  async function runExploreSearch() {
+    if (!state.exploreIngredients.length) {
+      showToast("ADD AT LEAST ONE INGREDIENT");
+      ingInput.focus();
+      return;
+    }
+
+    exploreStatus.classList.add("show");
+    exploreStatusText.textContent = "SEARCHING…";
+    exploreStatusCount.textContent = "0";
+
+    exploreResults.innerHTML = Array(6).fill(0).map(() => `
+      <article class="recipe">
+        <div class="recipe-top"><span class="skeleton" style="width:70px;height:14px"></span></div>
+        <div class="recipe-thumb"><div class="skeleton" style="width:100%;height:100%"></div></div>
+        <div class="recipe-body">
+          <div class="skeleton" style="height:18px;width:80%;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:12px;width:60%;margin-bottom:12px"></div>
+          <div class="skeleton" style="height:12px;width:100%"></div>
+        </div>
+      </article>
+    `).join("");
+
+    const all = [];
+
+    // TheMealDB: consultamos por CADA ingrediente (limitado al primero para free tier,
+    // pero probamos con todos y fusionamos)
+    if (state.exploreSources.themealdb) {
+      // TheMealDB free tier: filter.php?i=X solo busca por 1 ingrediente.
+      // Hacemos consultas en paralelo y fusionamos.
+      const promises = state.exploreIngredients.map(ing => searchTheMealDBIngredient(ing));
+      const perIngredient = await Promise.all(promises);
+      perIngredient.forEach(arr => all.push(...arr));
+    }
+
+    // Reddit: buscamos con la query combinada
+    if (state.exploreSources.reddit) {
+      const query = state.exploreIngredients.join(" ");
+      const redditResults = await searchReddit(query);
+      all.push(...redditResults);
+    }
+
+    // Feeds: buscar en posts guardados
+    if (state.exploreSources.feeds) {
+      state.exploreIngredients.forEach(ing => {
+        all.push(...searchInFeeds(ing));
+      });
+    }
+
+    // Hidratar los primeros N de TheMealDB para tener ingredientes completos
+    const mealDbItems = all.filter(r => r.source === "themealdb").slice(0, 30);
+    await Promise.all(mealDbItems.map(item => hydrateMealDBRecipe(item)));
+
+    // Merge + rank
+    const ranked = mergeAndRank(all, state.exploreIngredients);
+    ranked.sort((a, b) => b.score - a.score);
+
+    state.exploreResults = ranked;
+    state.exploreVisible = 12;
+
+    exploreStatusText.textContent = "SEARCH COMPLETE";
+    exploreStatusCount.textContent = ranked.length;
+
+    renderExploreResults();
+  }
+
+  function sortExploreResults(results) {
+    const copy = [...results];
+    if (state.exploreSort === "match") copy.sort((a, b) => b.score - a.score);
+    else if (state.exploreSort === "title") copy.sort((a, b) => a.title.localeCompare(b.title));
+    else if (state.exploreSort === "source") copy.sort((a, b) => a.sourceLabel.localeCompare(b.sourceLabel));
+    return copy;
+  }
+
+  function renderExploreResults() {
+    if (!state.exploreResults.length) {
+      exploreTitle.textContent = "No results";
+      exploreSubtitle.textContent = "Try different ingredients or sources.";
+      exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No recipes found with those ingredients. Try fewer, or toggle more sources.</p></div>`;
+      exploreFooterStats.textContent = "0 RESULTS";
+      return;
+    }
+
+    const sorted = sortExploreResults(state.exploreResults);
+    const toRender = sorted.slice(0, state.exploreVisible);
+
+    exploreTitle.textContent = `${state.exploreResults.length} recipes found`;
+    const sourcesUsed = [...new Set(state.exploreResults.map(r => r.sourceLabel))];
+    exploreSubtitle.textContent = `From ${sourcesUsed.length} source${sourcesUsed.length === 1 ? "" : "s"}: ${sourcesUsed.slice(0, 4).join(", ")}${sourcesUsed.length > 4 ? "…" : ""}`;
+
+    exploreResults.innerHTML = toRender.map(exploreCardHtml).join("") + exploreLoadMoreHtml(sorted.length, toRender.length);
+
+    // Eventos
+    exploreResults.querySelectorAll("[data-explore-detail]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const article = btn.closest(".recipe");
+        const item = state.exploreResults.find(r => (r.link || r.id) === article.dataset.url);
+        if (!item) return;
+        if (item.source === "themealdb") {
+          if (!item.meal) await hydrateMealDBRecipe(item);
+          openExploreMealModal(item);
+        } else if (item.source === "feed" && item.post) {
+          await openPostModal(item.post);
+        } else {
+          window.open(item.link, "_blank", "noopener,noreferrer");
+        }
+      });
+    });
+
+    exploreResults.querySelectorAll("[data-explore-save]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const article = btn.closest(".recipe");
+        const item = state.exploreResults.find(r => (r.link || r.id) === article.dataset.url);
+        if (!item) return;
+        toggleExploreSaved(item);
+        btn.classList.toggle("saved");
+        btn.textContent = btn.classList.contains("saved") ? "★" : "☆";
+      });
+    });
+
+    const lmBtn = document.getElementById("exploreLoadMoreBtn");
+    if (lmBtn) {
+      lmBtn.addEventListener("click", () => {
+        state.exploreVisible += 12;
+        renderExploreResults();
+      });
+    }
+
+    exploreFooterStats.textContent = `${sorted.length} RESULTS`;
+  }
+
+  function exploreLoadMoreHtml(total, shown) {
+    const remaining = total - shown;
+    if (remaining <= 0) return "";
+    return `<div class="load-more-wrap"><button class="load-more-btn" id="exploreLoadMoreBtn">Load ${Math.min(12, remaining)} more ↓ (${remaining} left)</button></div>`;
+  }
+
+  function exploreCardHtml(item) {
+    const isSaved = state.saved.some(s => s.url === (item.link || item.id));
+    const dots = state.exploreIngredients.map(ing => {
+      const hit = item.matchedIngredients.some(m => m.includes(ing) || ing.includes(m));
+      return `<span class="match-dot ${hit ? "hit" : ""}" title="${escapeHtml(ing)}${hit ? " ✓" : ""}"></span>`;
+    }).join("");
+    return `
+      <article class="recipe" data-url="${escapeHtml(item.link || item.id)}">
+        <div class="recipe-top">
+          <span class="source-badge ${item.sourceBadgeClass || "feed"}">${escapeHtml(item.sourceLabel)}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="match-indicator" title="Ingredients matched">${dots}</span>
+            <button class="fav ${isSaved ? "saved" : ""}" data-explore-save type="button">${isSaved ? "★" : "☆"}</button>
+          </div>
+        </div>
+        <div class="recipe-thumb">
+          ${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
+        </div>
+        <div class="recipe-body">
+          <h3>${escapeHtml(item.title)}</h3>
+          <div class="recipe-date">
+            Score ${item.score} · ${item.matchedIngredients.length}/${state.exploreIngredients.length} matched
+            ${item.date ? " · " + timeAgo(item.date) : ""}
+          </div>
+          <div class="recipe-excerpt">${escapeHtml(item.excerpt || "Click for details")}</div>
+          <div class="recipe-actions">
+            <a class="open-recipe" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Open ↗</a>
+            <button class="mini-btn" data-explore-detail title="Details">📖</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function toggleExploreSaved(item) {
+    const url = item.link || item.id;
+    const idx = state.saved.findIndex(s => s.url === url);
+    if (idx >= 0) {
+      state.saved.splice(idx, 1);
+      showToast("REMOVED FROM SAVED");
+    } else {
+      state.saved.push({
+        url, title: item.title,
+        imageUrl: item.image || "",
+        source: item.sourceLabel || "",
+        savedAt: Date.now()
+      });
+      showToast("SAVED");
+    }
+    localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+    renderSavedPanel();
+  }
+
+  function openExploreMealModal(item) {
+    const meal = item.meal;
+    if (!meal) { window.open(item.link, "_blank", "noopener,noreferrer"); return; }
+    modalTitle.textContent = meal.strMeal;
+    const ings = [];
+    for (let i = 1; i <= 20; i++) {
+      const name = (meal["strIngredient" + i] || "").trim();
+      const measure = (meal["strMeasure" + i] || "").trim();
+      if (name) ings.push({ name: name.toLowerCase(), display: `${measure} ${name}`.trim() });
+    }
+    const userSet = state.exploreIngredients.map(i => i.toLowerCase());
+    const ingsHtml = ings.map(i => {
+      const isHave = userSet.some(u => i.name.includes(u) || u.includes(i.name));
+      return `<div class="modal-ing" style="background:${isHave ? '#c8f0c8' : '#ffd6d0'};color:#171717" data-original="${escapeHtml(i.display)}">
+        <span class="ing-text">${isHave ? "✓ " : "✗ "}${escapeHtml(i.display)}</span>
+      </div>`;
+    }).join("");
+
+    modalBody.innerHTML = `
+      <div class="modal-hero">
+        <img src="${escapeHtml(meal.strMealThumb)}" alt="">
+        <div class="modal-hero-info">
+          <h3>${escapeHtml(meal.strMeal)}</h3>
+          <div class="modal-meta">
+            ${meal.strCategory ? escapeHtml(meal.strCategory) : ""}
+            ${meal.strArea ? " · " + escapeHtml(meal.strArea) : ""}
+          </div>
+          <div class="modal-actions">
+            <a class="modal-action-btn primary" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Open original ↗</a>
+            <button class="modal-action-btn" id="modalExportBtn">↧ Export .md</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <h4>Ingredients (${ings.length})</h4>
+        <div class="modal-ingredients">${ingsHtml}</div>
+      </div>
+      <div class="modal-section">
+        <h4>Instructions</h4>
+        <div class="modal-instructions">${escapeHtml(meal.strInstructions || "")}</div>
+      </div>
+    `;
+
+    modalBackdrop.classList.add("show");
+    document.body.style.overflow = "hidden";
+
+    $("#modalExportBtn").addEventListener("click", () => {
+      exportMealAsMarkdown(item, meal, ings);
+    });
+  }
+
+  function exportMealAsMarkdown(item, meal, ings) {
+    let md = `# ${meal.strMeal}\n\n`;
+    md += `![${meal.strMeal}](${meal.strMealThumb})\n\n`;
+    if (meal.strCategory) md += `**Category:** ${meal.strCategory}\n`;
+    if (meal.strArea) md += `**Cuisine:** ${meal.strArea}\n`;
+    md += `**Source:** ${item.link}\n\n`;
+    md += `## Ingredients\n\n`;
+    ings.forEach(i => md += `- ${i.display}\n`);
+    md += `\n## Instructions\n\n${meal.strInstructions}\n\n`;
+    md += `---\n\nExported from Kitchen.exe on ${new Date().toLocaleString()}\n`;
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${meal.strMeal.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 60)}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("EXPORTED AS MARKDOWN");
+  }
+
+  /* ---------- Explore events ---------- */
+  $("#exploreSearchBtn").addEventListener("click", runExploreSearch);
+  $("#exploreClearBtn").addEventListener("click", () => {
+    state.exploreIngredients = [];
+    renderExploreIngredients();
+    exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔎</div><p>Add up to 5 ingredients above, then press <strong>Search recipes</strong>.</p></div>`;
+    exploreTitle.textContent = "Search results";
+    exploreSubtitle.textContent = "Add ingredients and press search.";
+    showToast("CLEARED");
+  });
+  $("#exploreRandomBtn").addEventListener("click", () => {
+    const pool = ["chicken","beef","rice","pasta","salmon","eggs","tofu","chickpeas","potatoes","tomatoes","onion","garlic","spinach","cheese","mushrooms"];
+    const count = 1 + Math.floor(Math.random() * 3);
+    state.exploreIngredients = [];
+    while (state.exploreIngredients.length < count) {
+      const p = pool[Math.floor(Math.random() * pool.length)];
+      if (!state.exploreIngredients.includes(p)) state.exploreIngredients.push(p);
+    }
+    renderExploreIngredients();
+    runExploreSearch();
+  });
+
+  exploreSortSelect.addEventListener("change", () => {
+    state.exploreSort = exploreSortSelect.value;
+    renderExploreResults();
+  });
+
+  /* ============================================================ */
+  /* ============ MODAL (feeds tab) ============================= */
+  /* ============================================================ */
+
+  async function openPostModal(post) {
+    modalTitle.textContent = post.feedTitle || "Post";
+    if (!post.enriched) {
+      modalBody.innerHTML = `<div class="empty" style="border:none;background:transparent"><div class="big">⏳</div><p>Extracting recipe from the original article…</p></div>`;
+      modalBackdrop.classList.add("show");
+      document.body.style.overflow = "hidden";
+      await enrichPost(post);
+    }
+    if (!state.read.includes(post.link)) {
+      state.read.push(post.link);
+      localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+      updateUnreadBadge();
+    }
+    renderModalContent(post);
+  }
+
+  function renderModalContent(post) {
+    const recipe = post.recipe;
+    const image = post.image || recipe?.image || "";
+
+    let ingredientsHtml = "";
+    if (recipe?.ingredients?.length) {
+      ingredientsHtml = `
+        <div class="modal-section">
+          <h4>
+            Ingredients (${recipe.ingredients.length})
+            <span class="scale-buttons" id="scaleButtons">
+              <button data-scale="0.5">×0.5</button>
+              <button data-scale="1" class="active">×1</button>
+              <button data-scale="2">×2</button>
+              <button data-scale="3">×3</button>
+            </span>
+          </h4>
+          <div class="modal-ingredients" id="modalIngredients">
+            ${recipe.ingredients.map(i => `<div class="modal-ing" data-original="${escapeHtml(i)}"><span class="ing-text">${escapeHtml(i)}</span></div>`).join("")}
+          </div>
+        </div>`;
+    }
+
+    let instructionsHtml = "";
+    if (recipe?.instructions?.length) {
+      instructionsHtml = `
+        <div class="modal-section">
+          <h4>Instructions (${recipe.instructions.length} steps)</h4>
+          ${recipe.instructions.map((s, i) => `
+            <div class="step-item">
+              <span class="step-num">${i + 1}</span>
+              <span>${escapeHtml(s)}</span>
+            </div>
+          `).join("")}
+        </div>`;
+    }
+
+    const metaParts = [];
+    if (recipe?.totalTime) metaParts.push(`⏱ ${recipe.totalTime}`);
+    if (recipe?.servings) metaParts.push(`🍽 ${Array.isArray(recipe.servings) ? recipe.servings[0] : recipe.servings}`);
+    if (post.author) metaParts.push(`✎ ${post.author}`);
+
+    modalBody.innerHTML = `
+      <div class="modal-hero">
+        ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<div style="border:2px solid var(--ink);background:var(--soft);min-height:200px;display:grid;place-items:center;font-size:60px">🍽️</div>`}
+        <div class="modal-hero-info">
+          <h3>${escapeHtml(post.title)}</h3>
+          <div class="modal-meta">${post.date ? escapeHtml(timeAgo(post.date)) : ""}${metaParts.length ? " · " + metaParts.map(escapeHtml).join(" · ") : ""}</div>
+          <div style="font:12px/1.5 var(--mono);color:var(--muted);margin-bottom:10px">${escapeHtml(post.excerpt || "")}</div>
+          <div class="modal-actions">
+            <a class="modal-action-btn primary" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Read original ↗</a>
+            <button class="modal-action-btn" id="modalSaveBtn">${state.saved.some(s => s.url === post.link) ? "★ Saved" : "☆ Save"}</button>
+            <button class="modal-action-btn" id="modalExportBtn">↧ Export .md</button>
+            <button class="modal-action-btn" id="modalCopyBtn">🔗 Copy link</button>
+          </div>
+        </div>
+      </div>
+      ${ingredientsHtml}
+      ${instructionsHtml}
+      ${!recipe ? `<div class="modal-enrich-note">📖 This post doesn't have structured recipe data. Read the original article for the full recipe.</div>` : ""}
+    `;
+
+    modalBackdrop.classList.add("show");
+    document.body.style.overflow = "hidden";
+
+    $("#modalSaveBtn").addEventListener("click", (e) => {
+      toggleSaved(post);
+      e.currentTarget.textContent = state.saved.some(s => s.url === post.link) ? "★ Saved" : "☆ Save";
+      renderResults();
+    });
+    $("#modalCopyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(post.link);
+        showToast("LINK COPIED");
+      } catch { showToast("COPY FAILED"); }
+    });
+    $("#modalExportBtn").addEventListener("click", () => exportPostAsMarkdown(post));
+
+    const scaleButtons = $("#scaleButtons");
+    if (scaleButtons) {
+      scaleButtons.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          scaleButtons.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const scale = parseFloat(btn.dataset.scale);
+          const container = $("#modalIngredients");
+          container.querySelectorAll(".modal-ing").forEach(el => {
+            const original = el.dataset.original;
+            const parsed = parseQuantity(original);
+            if (parsed && parsed.qty) {
+              const newQty = parsed.qty * scale;
+              el.querySelector(".ing-text").textContent = `${formatQuantity(newQty)}${parsed.unit ? " " + parsed.unit : ""} ${parsed.rest}`.trim();
+            }
+          });
+        });
+      });
+    }
+
+    if (ingredientsHtml) {
+      const container = $("#modalIngredients");
+      container.querySelectorAll(".modal-ing").forEach(el => {
+        const text = el.dataset.original;
+        const conversions = getAvailableConversions(text);
+        if (conversions.length) {
+          const btn = document.createElement("button");
+          btn.className = "convert-btn";
+          btn.textContent = "⇄";
+          btn.title = "Convert to " + conversions.join(", ");
+          btn.addEventListener("click", () => {
+            const next = prompt(`Convert to which unit?\nOptions: ${conversions.join(", ")}`, conversions[0]);
+            if (next && conversions.includes(next.toLowerCase())) {
+              el.querySelector(".ing-text").textContent = convertUnit(text, next.toLowerCase());
+            }
+          });
+          el.appendChild(btn);
+        }
+      });
+    }
+  }
+
+  function exportPostAsMarkdown(post) {
+    const recipe = post.recipe;
+    const image = post.image || recipe?.image || "";
+    let md = `# ${post.title}\n\n`;
+    if (image) md += `![${post.title}](${image})\n\n`;
+    if (post.feedTitle) md += `**Source:** ${post.feedTitle}\n`;
+    if (post.author) md += `**Author:** ${post.author}\n`;
+    if (post.date) md += `**Date:** ${new Date(post.date).toLocaleDateString()}\n`;
+    md += `**URL:** ${post.link}\n\n`;
+    if (recipe?.totalTime) md += `**Total time:** ${recipe.totalTime}\n`;
+    if (recipe?.servings) md += `**Servings:** ${Array.isArray(recipe.servings) ? recipe.servings[0] : recipe.servings}\n`;
+    md += "\n";
+    if (recipe?.ingredients?.length) {
+      md += `## Ingredients\n\n`;
+      recipe.ingredients.forEach(i => md += `- ${i}\n`);
+      md += "\n";
+    }
+    if (recipe?.instructions?.length) {
+      md += `## Instructions\n\n`;
+      recipe.instructions.forEach((s, i) => md += `${i + 1}. ${s}\n`);
+      md += "\n";
+    } else if (post.excerpt) {
+      md += `## Excerpt\n\n${post.excerpt}\n\n`;
+    }
+    md += `---\n\nExported from Kitchen.exe on ${new Date().toLocaleString()}\n`;
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${post.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 60) || "recipe"}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("EXPORTED AS MARKDOWN");
+  }
+
+  function closeModal() {
+    modalBackdrop.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+  $("#modalClose").addEventListener("click", closeModal);
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+
+  /* ============================================================ */
+  /* ============ EXPORT / IMPORT FEEDS ========================= */
+  /* ============================================================ */
+
+  $("#exportFeedsBtn").addEventListener("click", () => {
+    const data = JSON.stringify(state.feeds.map(f => ({
+      url: f.url, title: f.title, categories: f.categories || []
+    })), null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "kitchen-feeds.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("FEEDS EXPORTED");
+  });
+
+  $("#importFeedsInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      if (!Array.isArray(imported)) throw new Error("NOT_ARRAY");
+      let added = 0;
+      imported.forEach(item => {
+        if (item.url && !state.feeds.some(f => f.url === item.url)) {
+          state.feeds.push({ url: item.url, title: item.title || "", categories: item.categories || [], status: "" });
+          added++;
+        }
+      });
+      saveFeeds(); renderFeeds(); renderCatFilters();
+      showToast(`IMPORTED ${added} FEED${added === 1 ? "" : "S"}`);
+    } catch {
+      showToast("INVALID FILE");
+    }
+    e.target.value = "";
+  });
+
+  /* ============ AUTO-REFRESH ============ */
+  function setAutoRefresh(minutes) {
+    state.autoRefreshMin = minutes;
+    localStorage.setItem("kitchenExeAutoRefresh", String(minutes));
+    if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+    if (minutes > 0) {
+      state.autoRefreshTimer = setInterval(() => {
+        if (state.feeds.length) refreshAllFeeds();
+      }, minutes * 60 * 1000);
+    }
+  }
+  autoRefreshSelect.value = String(state.autoRefreshMin);
+  autoRefreshSelect.addEventListener("change", () => setAutoRefresh(parseInt(autoRefreshSelect.value, 10)));
+  if (state.autoRefreshMin > 0) setAutoRefresh(state.autoRefreshMin);
+
+  /* ============ EVENTS (feeds tab) ============ */
+  feedAddBtn.addEventListener("click", addFeed);
+  feedUrlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addFeed(); }
+  });
+  $("#refreshFeedsBtn").addEventListener("click", refreshAllFeeds);
+
+  $$(".filter[data-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".filter[data-filter]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.filters.category = btn.dataset.filter;
+      state.visibleCount = 9;
+      renderResults();
+    });
+  });
+
+  $("#toggleSavedBtn").addEventListener("click", () => savedPanel.classList.toggle("show"));
+  $("#toggleGroupBtn").addEventListener("click", (e) => {
+    state.groupBySource = !state.groupBySource;
+    e.currentTarget.classList.toggle("active", state.groupBySource);
+    e.currentTarget.textContent = state.groupBySource ? "☰ Grouped by source" : "☰ Group by source";
+    renderResults();
+  });
+  $("#markAllReadBtn").addEventListener("click", () => {
+    state.read = state.allPosts.map(p => p.link);
+    localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+    updateUnreadBadge(); renderResults();
+    showToast("MARKED ALL READ");
+  });
+  sortSelect.addEventListener("change", () => {
+    state.sort = sortSelect.value;
+    state.visibleCount = 9;
+    renderResults();
+  });
+
+  let searchDebounce;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      state.filters.keyword = searchInput.value.trim();
+      state.visibleCount = 9;
+      renderResults();
+    }, 200);
+  });
+  $("#searchBtn").addEventListener("click", () => {
+    state.filters.keyword = searchInput.value.trim();
+    state.visibleCount = 9;
+    renderResults();
+  });
+
+  $("#mobileRefreshBtn").addEventListener("click", refreshAllFeeds);
+  $("#mobileSearchBtn").addEventListener("click", () => {
+    searchInput.focus();
+    searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  /* ============ KEYBOARD ============ */
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target.tagName || "").toLowerCase();
+    const typing = tag === "input" || tag === "textarea" || tag === "select";
+    if (e.key === "Escape") {
+      if (modalBackdrop.classList.contains("show")) { closeModal(); return; }
+    }
+    if (e.key.toLowerCase() === "r" && !typing && !e.ctrlKey && !e.metaKey && state.activeTab === "feeds") {
+      refreshAllFeeds();
+    }
+  });
+
+  /* ============ PWA ============ */
+  if ("serviceWorker" in navigator) {
+    const swCode = `
+      const CACHE = 'kitchen-exe-v50';
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+      self.addEventListener('fetch', e => {
+        const req = e.request;
+        if (req.method !== 'GET') return;
+        const url = new URL(req.url);
+        if (url.origin === location.origin) {
+          e.respondWith(
+            caches.match(req).then(r => r || fetch(req).then(res => {
+              const copy = res.clone();
+              caches.open(CACHE).then(c => c.put(req, copy));
+              return res;
+            }).catch(() => caches.match(req)))
+          );
+        }
+      });
+    `;
+    try {
+      const blob = new Blob([swCode], { type: "application/javascript" });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    } catch {}
+  }
+
+  /* ============ INIT ============ */
+  renderFeeds();
+  renderCatFilters();
+  updateFeedCount();
+  renderSavedPanel();
+  renderResults();
+  updateUnreadBadge();
+  renderExploreIngredients();
+
+  if (state.feeds.length) refreshAllFeeds();
+})();
+</script>
+</body>
+</html>
