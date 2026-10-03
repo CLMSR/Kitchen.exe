@@ -1,12 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#f2efe5">
-<meta name="description" content="Kitchen.exe — your personal recipe feed reader + ingredient search.">
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Kitchen.exe%22%2C%22short_name%22%3A%22Kitchen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f2efe5%22%2C%22theme_color%22%3A%22%23f2efe5%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%253D%25270%25200%252064%252064%2527%253E%253Crect%2520width%253D%252764%2527%2520height%253D%252764%2527%2520fill%253D%2527%2523d8ff43%2527%2F%253E%253Ctext%2520x%253D%252732%2527%2520y%2520%253D%252742%2527%2520font-size%253D%252738%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%258D%25B3%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
-<title>Kitchen.exe — Recipe Feed Reader + Explore</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f2efe5">
+  <meta name="description" content="Kitchen.exe — your personal recipe feed reader. Add RSS feeds and search recipes by ingredients.">
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
+  <!-- Apple (iOS no usa manifest para iconos ni standalone) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Kitchen.exe">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="./apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="./apple-touch-icon.png">
+
+  <!-- Windows / Edge -->
+  <meta name="msapplication-TileColor" content="#f2efe5">
+  <meta name="msapplication-TileImage" content="./icon-192.png">
+
+  <title>Kitchen.exe — Recipe Feed Reader</title>
+</head>
 <style>
   :root{
     --paper:#f2efe5;
@@ -3137,33 +3156,38 @@
     }
   });
 
-  /* ============ PWA ============ */
-  if ("serviceWorker" in navigator) {
-    const swCode = `
-      const CACHE = 'kitchen-exe-v50';
-      self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-      self.addEventListener('fetch', e => {
-        const req = e.request;
-        if (req.method !== 'GET') return;
-        const url = new URL(req.url);
-        if (url.origin === location.origin) {
-          e.respondWith(
-            caches.match(req).then(r => r || fetch(req).then(res => {
-              const copy = res.clone();
-              caches.open(CACHE).then(c => c.put(req, copy));
-              return res;
-            }).catch(() => caches.match(req)))
-          );
-        }
-      });
-    `;
-    try {
-      const blob = new Blob([swCode], { type: "application/javascript" });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).catch(() => {});
-    } catch {}
-  }
+/* ============ PWA: registrar service worker ============ */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js", { scope: "./" })
+      .then((reg) => {
+        console.log("[PWA] SW registrado:", reg.scope);
+
+        // Buscar actualizaciones cada hora
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+
+        // Avisar al usuario si hay update
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showToast("NEW VERSION AVAILABLE — RELOAD TO UPDATE", 4000);
+            }
+          });
+        });
+      })
+      .catch((err) => console.warn("[PWA] SW failed:", err));
+  });
+
+  // Recargar cuando el SW nuevo toma control
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
 
   /* ============ INIT ============ */
   renderFeeds();
