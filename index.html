@@ -9,15 +9,14 @@
   <!-- Kitchen.exe — App Icons / PWA -->
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
-
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-
 <link rel="manifest" href="./manifest.json">
 
 <meta name="theme-color" content="#0f6f73">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Kitchen.exe">
+  
   <!-- Windows / Edge -->
   <meta name="msapplication-TileColor" content="#f2efe5">
   <meta name="msapplication-TileImage" content="./icon-192.png">
@@ -1421,7 +1420,7 @@
         <div class="ingredient-box" id="ingredientBox">
           <div class="ing-chips" id="ingChips"></div>
           <input class="ing-input" id="ingInput" autocomplete="off"
-                 placeholder="type an ingredient>
+            placeholder="type an ingredient">
           <div class="ing-hint">Press Enter to add</div>
           <div class="ing-counter" id="ingCounter">0 / 5</div>
           <div class="autocomplete" id="autocomplete" role="listbox"></div>
@@ -1590,12 +1589,88 @@
 
   // Reddit recipe subreddits (búsqueda RSS)
   const REDDIT_SUBS = ["recipes", "cooking", "AskCulinary", "HealthyFood", "eatcheapandhealthy"];
-  function proxied(url) {
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
-                     /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (!isSafari) return url;
-    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  const CORS_PROXIES = [
+  (u) => `https://proxy.cors.dev/${u}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.cors.lol/?url=${encodeURIComponent(u)}`
+];
+
+  function proxied(url, proxyIndex = 0) {
+    const fn = CORS_PROXIES[proxyIndex] || CORS_PROXIES[0];
+    return fn(url);
   }
+
+  /*
+   * Fetch con timeout + rotación de proxies + fallback a directo.
+   * Devuelve la Response o lanza error.
+   */
+  async function fetchWithProxy(url, options = {}, timeoutMs = 12000) {
+  const errors = [];
+
+  const requestOptions = {
+    ...options,
+    headers: {
+      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, */*",
+      ...(options.headers || {})
+    }
+  };
+
+  // 1. Intentar primero la URL original.
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(url, {
+      ...requestOptions,
+      signal: controller.signal
+    });
+
+    clearTimeout(timer);
+
+    if (res.ok) return res;
+
+    errors.push(`direct:HTTP${res.status}`);
+  } catch (err) {
+    errors.push(`direct:${err.name || err.message}`);
+  }
+
+  // 2. Si la petición directa falla por CORS, probar los proxies.
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      const res = await fetch(proxied(url, i), {
+        ...requestOptions,
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if (res.ok) return res;
+
+      errors.push(`proxy${i}:HTTP${res.status}`);
+    } catch (err) {
+      errors.push(`proxy${i}:${err.name || err.message}`);
+    }
+  }
+
+  throw new Error("ALL_FAILED " + errors.join(" | "));
+}
+async function fetchFeedDocument(url) {
+  const res = await fetchWithProxy(url, {
+    headers: {
+      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, */*"
+    }
+  });
+
+  const text = await res.text();
+
+  return {
+    response: res,
+    text
+  };
+}
 
   /* ============ UNIT CONVERSION ============ */
   const UNIT_CONVERSIONS = {
@@ -1670,13 +1745,14 @@
     const conv = UNIT_CONVERSIONS[parsed.unit];
     return conv ? Object.keys(conv) : [];
   }
+  
 
   /* ============ ENRICH (og:image + schema.org) ============ */
   async function enrichPost(post) {
     if (!post.link || state.enrichQueue.has(post.link)) return;
     state.enrichQueue.add(post.link);
     try {
-      const res = await fetch(proxied(post.link), { headers: { "Accept": "text/html" } });
+      const res = await fetchWithProxy(post.link, { headers: { "Accept": "text/html" } }, 12000);
       if (!res.ok) throw new Error("HTTP_" + res.status);
       const html = await res.text();
       const doc = new DOMParser().parseFromString(html, "text/html");
@@ -1846,9 +1922,30 @@
         const cats = f.categories || [];
         return `
           <div class="feed-item" data-index="${i}">
-            <span class="feed-status ${f.status || ""}"></span>
+<span
+  class="feed-status ${f.status || ""}"
+  title="${escapeHtml(
+    f.error ||
+    (
+      f.status === "ok"
+        ? "Connected"
+        : f.status === "loading"
+          ? "Connecting…"
+          : "Feed connection failed"
+    )
+  )}"
+></span>
             ${fav ? `<img class="feed-favicon" src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
-            <span class="feed-name" title="${escapeHtml(f.title || f.url)}">${escapeHtml(f.title || f.url)}</span>
+<span
+  class="feed-name"
+  title="${escapeHtml(
+    f.error
+      ? `${f.title || f.url} — ${f.error}`
+      : (f.title || f.url)
+  )}"
+>
+  ${escapeHtml(f.title || f.url)}
+</span>
             <div class="feed-actions-mini">
               <button data-rename="${i}" title="Rename">✎</button>
               <button data-cat="${i}" title="Categories">🏷</button>
@@ -1938,11 +2035,103 @@
   }
 
   function parseFeed(xmlText, feedUrl) {
-    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
-    if (doc.querySelector("parsererror")) throw new Error("INVALID_XML");
-    const isAtom = doc.documentElement.tagName.toLowerCase() === "feed";
-    return isAtom ? parseAtom(doc, feedUrl) : parseRss(doc, feedUrl);
+  const text = String(xmlText || "").trim();
+
+  if (!text) {
+    throw new Error("EMPTY_RESPONSE");
   }
+
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+
+  if (doc.querySelector("parsererror")) {
+    throw new Error("INVALID_XML");
+  }
+
+  const root = (
+    doc.documentElement?.localName ||
+    doc.documentElement?.tagName ||
+    ""
+  ).toLowerCase();
+
+  if (root === "feed") {
+    return parseAtom(doc, feedUrl);
+  }
+
+  if (root === "rss" || root === "rdf" || root === "rdf:rdf") {
+    return parseRss(doc, feedUrl);
+  }
+
+  if (doc.querySelector("channel") || doc.querySelector("item")) {
+    return parseRss(doc, feedUrl);
+  }
+
+  if (doc.querySelector("entry")) {
+    return parseAtom(doc, feedUrl);
+  }
+
+  throw new Error("NOT_A_FEED");
+}
+async function resolveFeedUrl(url) {
+  const first = await fetchFeedDocument(url);
+
+  // Primero comprobar si la URL proporcionada ya es un feed.
+  try {
+    parseFeed(first.text, url);
+
+    return {
+      url,
+      text: first.text
+    };
+  } catch (_) {
+    // No era directamente un RSS/Atom.
+  }
+
+  // Si es una página web, intentar descubrir su RSS/Atom.
+  const htmlDoc = new DOMParser().parseFromString(
+    first.text,
+    "text/html"
+  );
+
+  const candidates = [];
+
+  htmlDoc
+    .querySelectorAll(
+      'link[rel~="alternate"][type*="rss"], ' +
+      'link[rel~="alternate"][type*="atom"], ' +
+      'link[type*="application/rss+xml"], ' +
+      'link[type*="application/atom+xml"]'
+    )
+    .forEach(link => {
+      const href = link.getAttribute("href");
+
+      if (!href) return;
+
+      try {
+        const absoluteUrl = new URL(href, url).href;
+
+        if (!candidates.includes(absoluteUrl)) {
+          candidates.push(absoluteUrl);
+        }
+      } catch (_) {}
+    });
+
+  for (const candidate of candidates) {
+    try {
+      const result = await fetchFeedDocument(candidate);
+
+      parseFeed(result.text, candidate);
+
+      return {
+        url: candidate,
+        text: result.text
+      };
+    } catch (_) {
+      // Probar el siguiente candidato.
+    }
+  }
+
+  throw new Error("NOT_A_FEED");
+}
 
   function parseRss(doc, feedUrl) {
     const channel = doc.querySelector("channel");
@@ -2025,27 +2214,35 @@
     };
   }
 
-  async function fetchFeed(index) {
-    const feed = state.feeds[index];
-    if (!feed) return;
-    feed.status = "loading";
-    renderFeeds();
-    try {
-      const res = await fetch(proxied(feed.url), {headers: { "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*" }});
-      if (!res.ok) throw new Error("HTTP_" + res.status);
-      const text = await res.text();
-      const parsed = parseFeed(text, feed.url);
-      feed.title = feed.title || parsed.feedTitle;
-      feed.status = "ok";
-      feed.posts = parsed.posts;
-      feed.lastFetched = Date.now();
-    } catch (err) {
-      feed.status = "error";
-      feed.posts = feed.posts || [];
-      feed.error = String(err.message || err);
-    }
-    saveFeeds(); renderFeeds(); rebuildAllPosts();
+async function fetchFeed(index) {
+  const feed = state.feeds[index];
+  if (!feed) return;
+
+  feed.status = "loading";
+  renderFeeds();
+
+  try {
+    const resolved = await resolveFeedUrl(feed.url);
+    const parsed = parseFeed(resolved.text, resolved.url);
+
+    feed.url = resolved.url;
+    feed.title = feed.title || parsed.feedTitle;
+    feed.status = "ok";
+    feed.error = "";
+    feed.posts = parsed.posts;
+    feed.lastFetched = Date.now();
+
+  } catch (err) {
+    feed.status = "error";
+    feed.posts = feed.posts || [];
+    feed.error = String(err.message || err);
+    console.warn("Feed failed:", feed.url, err.message);
   }
+
+  saveFeeds();
+  renderFeeds();
+  rebuildAllPosts();
+}
 
   async function refreshAllFeeds() {
     if (!state.feeds.length) { showToast("ADD A FEED FIRST"); return; }
@@ -2413,7 +2610,13 @@
   /* ---------- TheMealDB ---------- */
   async function searchTheMealDBIngredient(ingredient) {
     try {
-      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(
+        `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timer);
       if (!res.ok) throw new Error("HTTP_" + res.status);
       const data = await res.json();
       if (!data.meals) return [];
@@ -2438,7 +2641,13 @@
   async function hydrateMealDBRecipe(item) {
     if (item.allIngredients.length) return item;
     try {
-      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.mealId}`);
+       const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(
+        `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.mealId}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timer);
       const data = await res.json();
       const meal = data.meals?.[0];
       if (!meal) return item;
@@ -2457,12 +2666,10 @@
   /* ---------- Reddit RSS ---------- */
   async function searchReddit(query) {
     const results = [];
-    // Buscamos en paralelo en todos los subreddits
     const fetches = REDDIT_SUBS.map(async (sub) => {
       try {
         const url = `https://www.reddit.com/r/${sub}/search.rss?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=year`;
-        const res = await fetch(proxied(url), { headers: { "Accept": "application/rss+xml, application/atom+xml, */*" } });
-        if (!res.ok) return [];
+        const res = await fetchWithProxy(url, { headers: { "Accept": "application/rss+xml, application/atom+xml, */*" } });
         const text = await res.text();
         const doc = new DOMParser().parseFromString(text, "application/xml");
         const entries = [...doc.querySelectorAll("entry")];
@@ -2475,7 +2682,6 @@
           let image = "";
           const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
           if (imgMatch) image = imgMatch[1];
-          // Ignorar posts sin link real
           if (!link || !link.startsWith("http")) return null;
           return {
             id: "reddit-" + link,
