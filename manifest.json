@@ -1,16 +1,20 @@
 {
   "name": "Kitchen.exe — Recipe Feed Reader",
   "short_name": "Kitchen.exe",
-  "description": "Your personal recipe feed reader. Add RSS feeds of your favorite recipe blogs and Substacks, search by up to 5 ingredients, and save what you love. No AI, no algorithm.",
+  "description": "Discover recipes by ingredients, follow recipe RSS feeds, and save recipes from your favorite sources.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#f2efe5",
   "theme_color": "#f2efe5",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["food", "lifestyle", "utilities"],
+  "categories": [
+    "food",
+    "lifestyle",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -31,14 +35,24 @@
       "short_name": "Explore",
       "description": "Search recipes by ingredients across the web and Reddit",
       "url": "./index.html#explore",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "My feeds",
       "short_name": "Feeds",
       "description": "Open your RSS recipe feeds",
       "url": "./index.html#feeds",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

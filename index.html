@@ -4,22 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#f2efe5">
-  <meta name="description" content="Kitchen.exe — your personal recipe feed reader. Add RSS feeds and search recipes by ingredients.">
+  <meta name="description" content="Kitchen.exe — discover recipes by ingredients, follow RSS and social feeds, and organize saved recipes.">
 
   <!-- Kitchen.exe — App Icons / PWA -->
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
+
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+
 <link rel="manifest" href="./manifest.json">
 
 <meta name="theme-color" content="#0f6f73">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Kitchen.exe">
-  
   <!-- Windows / Edge -->
   <meta name="msapplication-TileColor" content="#f2efe5">
-  <meta name="msapplication-TileImage" content="./icon-192.png">
+  <meta name="msapplication-TileImage" content="./icons/icon-192.png">
 
   <title>Kitchen.exe — Recipe Feed Reader</title>
 </head>
@@ -1008,6 +1009,27 @@
   .source-toggle[data-src="themealdb"] .dot{background:#4caf50}
   .source-toggle[data-src="reddit"] .dot{background:#ff4500}
   .source-toggle[data-src="feeds"] .dot{background:#2196f3}
+  .source-toggle[data-src="tiktok"] .dot{background:#111}
+  .source-toggle[data-src="instagram"] .dot{background:#c13584}
+  .source-toggle[data-src="substack"] .dot{background:#ff6719}
+  .source-note{margin:8px 0 0;font:10px/1.5 var(--mono);color:var(--muted);max-width:680px}
+  .explore-extra-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:12px}
+  .explore-filter-field{display:flex;flex-direction:column;gap:5px;font:700 10px var(--mono);text-transform:uppercase;color:#171717}
+  .explore-filter-field input,.explore-filter-field select{width:100%;min-width:0;border:2px solid #171717;background:#fff;color:#171717;padding:9px;font:11px var(--mono);box-sizing:border-box}
+  .feed-unified-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .feed-unified-controls select{max-width:100%;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:8px;font:11px var(--mono)}
+  .recipe-notes-editor{display:grid;gap:8px;margin-top:14px;padding:12px;border:1.5px solid var(--ink);background:var(--paper)}
+  .recipe-notes-editor label{display:grid;gap:5px;font:700 10px var(--mono);text-transform:uppercase}
+  .recipe-notes-editor input,.recipe-notes-editor textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:9px;font:12px var(--mono)}
+  .recipe-notes-editor textarea{min-height:64px;resize:vertical}
+  .dismiss-post{border:1px solid var(--ink);background:transparent;color:var(--ink);padding:6px 8px;cursor:pointer;font:700 10px var(--mono)}
+  @media(max-width:600px){.explore-extra-filters{grid-template-columns:1fr 1fr}.feed-unified-controls select{flex:1 1 140px}}
+  .social-discovery{margin:0 0 16px;padding:12px;border:2px dashed var(--ink);background:var(--paper)}
+  .social-discovery[hidden]{display:none}
+  .social-discovery h3{margin:0 0 8px;font:700 11px var(--mono);text-transform:uppercase}
+  .social-discovery-links{display:flex;flex-wrap:wrap;gap:8px}
+  .social-discovery-link{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:2px solid var(--ink);background:var(--panel);color:var(--ink);font:700 10px var(--mono);text-decoration:none;text-transform:uppercase}
+  .social-discovery-link:hover{background:var(--accent);color:#171717}
 
   .explore-results-head{
     display:flex;
@@ -1276,7 +1298,7 @@
       </div>
       <div class="title-actions">
         <button class="title-btn" id="themeToggle" title="Toggle dark mode">◐</button>
-        <div class="title-meta">v5.0 // RSS + EXPLORE</div>
+        <div class="title-meta">v5.1 // UNIFIED DISCOVERY</div>
       </div>
     </header>
 
@@ -1316,6 +1338,16 @@
                      placeholder="https://blog.com/feed" autocomplete="off">
               <button class="feed-add-btn" id="feedAddBtn">+ Add feed</button>
             </div>
+            <details class="tiktok-feed-setup" style="margin:10px 0 14px;padding:10px 12px;border:1px solid var(--border, #ddd);border-radius:10px;background:var(--surface, transparent)">
+              <summary style="cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.04em">＋ ADD TIKTOK ACCOUNT</summary>
+              <p style="font-size:12px;line-height:1.5;margin:10px 0;color:var(--muted, #666)">Create an RSS feed for a public TikTok profile, then paste its RSS URL here. No TikTok API or AI is used.</p>
+              <label for="tiktokProfileInput" style="display:block;font-size:11px;margin:8px 0 4px">TikTok profile URL</label>
+              <input class="feed-input" id="tiktokProfileInput" type="url" placeholder="https://www.tiktok.com/@creator" autocomplete="off" style="width:100%;box-sizing:border-box">
+              <div style="margin:8px 0;font-size:12px"><a href="https://rss.app/rss-feed/tiktok-to-rss" target="_blank" rel="noopener noreferrer">Open TikTok RSS generator ↗</a></div>
+              <label for="tiktokRssInput" style="display:block;font-size:11px;margin:8px 0 4px">Generated RSS URL</label>
+              <input class="feed-input" id="tiktokRssInput" type="url" placeholder="Paste the RSS.app feed URL" autocomplete="off" style="width:100%;box-sizing:border-box">
+              <button class="feed-add-btn" id="tiktokAddBtn" style="width:100%;margin-top:9px">+ Add TikTok feed</button>
+            </details>
             <div class="feed-list" id="feedList"></div>
             <div class="cat-filter-row" id="catFilterRow" style="display:none"></div>
             <div class="feed-actions">
@@ -1360,6 +1392,16 @@
             <button class="search-btn" id="searchBtn">Filter ↗</button>
           </div>
 
+          <div class="feed-unified-controls" aria-label="Unified feed filters">
+            <select id="feedSourceFilter" aria-label="Filter by source">
+              <option value="all">All platforms</option><option value="rss">RSS / blogs</option><option value="tiktok">TikTok</option><option value="substack">Substack</option><option value="instagram">Instagram</option><option value="reddit">Reddit</option>
+            </select>
+            <input id="feedCreatorFilter" type="search" placeholder="Filter creator / source" aria-label="Filter creator or source" style="min-width:150px;max-width:220px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:8px;font:11px var(--mono)">
+            <select id="feedSortMode" aria-label="Feed ordering">
+              <option value="date">Newest first</option><option value="relevance">Relevance to keyword</option><option value="oldest">Oldest first</option><option value="title">Title A-Z</option><option value="source">By source</option>
+            </select>
+            <button class="filter" id="toggleDismissedBtn" type="button">Show discarded</button>
+          </div>
           <div class="secondary-row">
             <button class="filter" id="toggleSavedBtn">★ Saved (<span id="savedCountInline">0</span>)</button>
             <button class="filter" id="toggleGroupBtn">☰ Group by source</button>
@@ -1413,8 +1455,7 @@
       <div class="explore-hero">
         <h2>🔎 Explore recipes by ingredients</h2>
         <p>
-          Add up to <strong>5 ingredients</strong>. We'll search TheMealDB and Reddit's recipe
-          communities in parallel, then rank results by how many of your ingredients they use.
+          Add up to <strong>5 ingredients</strong>. We'll search recipe databases, Reddit and your feeds, then rank results by ingredient matches. Social search shortcuts open public platform searches.
         </p>
 
         <div class="ingredient-box" id="ingredientBox">
@@ -1431,8 +1472,24 @@
           <button class="source-toggle active" data-src="themealdb"><span class="dot"></span>TheMealDB</button>
           <button class="source-toggle active" data-src="reddit"><span class="dot"></span>Reddit</button>
           <button class="source-toggle" data-src="feeds"><span class="dot"></span>My feeds</button>
+          <button class="source-toggle" data-src="tiktok"><span class="dot"></span>TikTok</button>
+          <button class="source-toggle" data-src="instagram"><span class="dot"></span>Instagram</button>
+          <button class="source-toggle" data-src="substack"><span class="dot"></span>Substack</button>
+        </div>
+        <p class="source-note">Social shortcuts open each platform's public search. They are not indexed results; availability and search coverage depend on the platform.</p>
+        <div class="explore-extra-filters">
+          <label class="explore-filter-field">Exclude ingredients
+            <input id="excludeIngredientsInput" type="text" placeholder="e.g. peanuts, coriander">
+          </label>
+          <label class="explore-filter-field">Maximum total time
+            <select id="maxCookTime"><option value="0">Any time</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select>
+          </label>
+          <label class="explore-filter-field">Dish type
+            <select id="dishTypeFilter"><option value="all">Any dish</option><option value="starter">Starter / snack</option><option value="main">Main course</option><option value="dessert">Dessert</option><option value="side">Side dish</option><option value="breakfast">Breakfast</option><option value="vegetarian">Vegetarian</option></select>
+          </label>
         </div>
 
+        <p class="source-note">Time, dish type and exclusions are applied only to information available in each result. Social posts without structured ingredients cannot be verified as complete recipes.</p>
         <div class="explore-controls">
           <button class="explore-btn" id="exploreSearchBtn">Search recipes ↗</button>
           <button class="explore-secondary" id="exploreRandomBtn">🎲 Surprise me</button>
@@ -1452,6 +1509,10 @@
             <p id="exploreSubtitle" style="margin:4px 0 0;color:var(--muted);font-size:11px">Add ingredients and press search.</p>
           </div>
           <div class="results-head-right">
+            <select class="sort-select" id="exploreMatchMode" aria-label="Ingredient matching">
+              <option value="any">Optional matches · any ingredient</option>
+              <option value="all">Required matches · all ingredients</option>
+            </select>
             <select class="sort-select" id="exploreSortSelect">
               <option value="match">Match (high → low)</option>
               <option value="title">Title A-Z</option>
@@ -1460,6 +1521,7 @@
           </div>
         </div>
 
+        <div id="socialDiscovery" class="social-discovery" hidden></div>
         <div class="results" id="exploreResults">
           <div class="empty">
             <div class="big">🔎</div>
@@ -1495,16 +1557,22 @@
   <button id="mobileSearchBtn">🔍 Filter</button>
 </div>
 
+<script src="./recipe-core.js"></script>
+<script src="./storage-core.js"></script>
 <script>
 (() => {
   "use strict";
 
-  /* ============ STATE ============ */
+  /* ============ STORAGE + STATE ============ */
+  const KitchenStorage = window.KitchenStorage;
+  const readStored = (key, fallback) => KitchenStorage.read(key, fallback);
+  const writeStored = (key, value) => KitchenStorage.write(key, value);
+  const safeDateIso = (value) => KitchenRecipeCore.safeDateIso(value);
   const state = {
     // Feed tab
-    feeds: JSON.parse(localStorage.getItem("kitchenExeFeeds") || "[]"),
-    saved: JSON.parse(localStorage.getItem("kitchenExeSaved") || "[]"),
-    read: JSON.parse(localStorage.getItem("kitchenExeRead") || "[]"),
+    feeds: (Array.isArray(readStored("kitchenExeFeeds", [])) ? readStored("kitchenExeFeeds", []) : []).filter(x => x && typeof x === "object"),
+    saved: (Array.isArray(readStored("kitchenExeSaved", [])) ? readStored("kitchenExeSaved", []) : []).filter(x => x && typeof x === "object"),
+    read: (Array.isArray(readStored("kitchenExeRead", [])) ? readStored("kitchenExeRead", []) : []).filter(x => typeof x === "string"),
     filters: { category: "all", keyword: "", feedCategory: null },
     sort: "date",
     groupBySource: false,
@@ -1517,12 +1585,20 @@
     exploreIngredients: [],
     exploreResults: [],
     exploreSort: "match",
-    exploreSources: { themealdb: true, reddit: true, feeds: false },
+    exploreSources: { themealdb: true, reddit: true, feeds: false, tiktok: false, instagram: false, substack: false },
+    exploreMatchMode: "any",
+    exploreExcludedIngredients: [],
+    exploreMaxTime: 0,
+    exploreDishType: "all",
     exploreVisible: 12,
+    dismissed: (Array.isArray(readStored("kitchenExeDismissed", [])) ? readStored("kitchenExeDismissed", []) : []).filter(x => typeof x === "string"),
+    showDismissed: false,
+    feedSourceFilter: "all",
+    feedCreatorFilter: "",
 
     // Global
-    theme: localStorage.getItem("kitchenExeTheme") || "light",
-    autoRefreshMin: parseInt(localStorage.getItem("kitchenExeAutoRefresh") || "0", 10),
+    theme: readStored("kitchenExeTheme", "light") === "dark" ? "dark" : "light",
+    autoRefreshMin: Math.max(0, Math.min(1440, parseInt(readStored("kitchenExeAutoRefresh", "0"), 10) || 0)),
     activeTab: "feeds"
   };
 
@@ -1605,58 +1681,33 @@
    * Devuelve la Response o lanza error.
    */
   async function fetchWithProxy(url, options = {}, timeoutMs = 12000) {
-  const errors = [];
-
-  const requestOptions = {
-    ...options,
-    headers: {
-      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, */*",
-      ...(options.headers || {})
-    }
-  };
-
-  // 1. Intentar primero la URL original.
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    const res = await fetch(url, {
-      ...requestOptions,
-      signal: controller.signal
-    });
-
-    clearTimeout(timer);
-
-    if (res.ok) return res;
-
-    errors.push(`direct:HTTP${res.status}`);
-  } catch (err) {
-    errors.push(`direct:${err.name || err.message}`);
-  }
-
-  // 2. Si la petición directa falla por CORS, probar los proxies.
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    try {
+    const errors = [];
+    const requestOptions = {
+      ...options,
+      headers: {
+        Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, */*",
+        ...(options.headers || {})
+      }
+    };
+    const candidates = [url, ...CORS_PROXIES.map((_, i) => proxied(url, i))];
+    for (let i = 0; i < candidates.length; i++) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const res = await fetch(proxied(url, i), {
-        ...requestOptions,
-        signal: controller.signal
-      });
-
-      clearTimeout(timer);
-
-      if (res.ok) return res;
-
-      errors.push(`proxy${i}:HTTP${res.status}`);
-    } catch (err) {
-      errors.push(`proxy${i}:${err.name || err.message}`);
+      try {
+        const response = await fetch(candidates[i], { ...requestOptions, signal: controller.signal });
+        if (response.ok) return response;
+        errors.push(`${i === 0 ? "direct" : `proxy${i - 1}`}:HTTP${response.status}`);
+      } catch (err) {
+        errors.push(`${i === 0 ? "direct" : `proxy${i - 1}`}:${err.name || err.message || "network error"}`);
+      } finally {
+        clearTimeout(timer);
+      }
     }
+    const error = new Error("ALL_FAILED " + errors.join(" | "));
+    error.code = errors.some(e => e.includes("AbortError")) ? "TIMEOUT_OR_NETWORK" : "FETCH_FAILED";
+    throw error;
   }
 
-  throw new Error("ALL_FAILED " + errors.join(" | "));
-}
 async function fetchFeedDocument(url) {
   const res = await fetchWithProxy(url, {
     headers: {
@@ -1760,17 +1811,26 @@ async function fetchFeedDocument(url) {
       if (!post.image) {
         const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content") ||
                         doc.querySelector('meta[name="twitter:image"]')?.getAttribute("content");
-        if (ogImage) post.image = ogImage;
+        if (ogImage) post.image = safeHttpUrl(ogImage, post.link);
       }
 
       const recipeScripts = [...doc.querySelectorAll('script[type="application/ld+json"]')];
       for (const script of recipeScripts) {
         try {
           const data = JSON.parse(script.textContent);
-          const recipes = Array.isArray(data) ? data : (data["@graph"] || [data]);
-          const recipe = recipes.find(r =>
-            r && (r["@type"] === "Recipe" || (Array.isArray(r["@type"]) && r["@type"].includes("Recipe")))
-          );
+          const flatten = (value) => {
+            if (Array.isArray(value)) return value.flatMap(flatten);
+            if (!value || typeof value !== "object") return [];
+            const own = [value];
+            if (value["@graph"]) own.push(...flatten(value["@graph"]));
+            if (value.mainEntity) own.push(...flatten(value.mainEntity));
+            if (value.itemListElement) own.push(...flatten(value.itemListElement));
+            return own;
+          };
+          const recipe = flatten(data).find(r => {
+            const types = Array.isArray(r?.["@type"]) ? r["@type"] : [r?.["@type"]];
+            return types.some(type => String(type).toLowerCase() === "recipe");
+          });
           if (recipe) { post.recipe = extractRecipeFromSchema(recipe); break; }
         } catch {}
       }
@@ -1779,9 +1839,7 @@ async function fetchFeedDocument(url) {
         const iconLink = doc.querySelector('link[rel="icon"]') ||
                          doc.querySelector('link[rel="shortcut icon"]') ||
                          doc.querySelector('link[rel="apple-touch-icon"]');
-        if (iconLink) {
-          try { post.favicon = new URL(iconLink.getAttribute("href"), post.link).href; } catch {}
-        }
+        if (iconLink) post.favicon = safeHttpUrl(iconLink.getAttribute("href"), post.link);
       }
 
       post.enriched = true;
@@ -1796,10 +1854,11 @@ async function fetchFeedDocument(url) {
     const rawInst = recipe.recipeInstructions || [];
     (Array.isArray(rawInst) ? rawInst : [rawInst]).forEach(inst => {
       if (typeof inst === "string") instructions.push(inst);
-      else if (inst && inst["@type"] === "HowToSection") {
+      else if (inst && (inst["@type"] === "HowToSection" || inst.itemListElement)) {
         (inst.itemListElement || []).forEach(sub => {
-          if (sub.text) instructions.push(sub.text);
-          else if (sub.name) instructions.push(sub.name);
+          if (typeof sub === "string") instructions.push(sub);
+          else if (sub?.text) instructions.push(sub.text);
+          else if (sub?.name) instructions.push(sub.name);
         });
       } else if (inst && inst.text) instructions.push(inst.text);
       else if (inst && inst.name) instructions.push(inst.name);
@@ -1816,15 +1875,17 @@ async function fetchFeedDocument(url) {
       return "";
     };
 
-    const image = Array.isArray(recipe.image) ? recipe.image[0] :
-                  (typeof recipe.image === "object" ? recipe.image.url : recipe.image);
+    const rawImage = Array.isArray(recipe.image) ? recipe.image[0] : recipe.image;
+    const image = typeof rawImage === "object" && rawImage ? (rawImage.url || rawImage.contentUrl || "") : rawImage;
 
     return {
       ingredients, instructions,
       totalTime: parseDuration(recipe.totalTime),
       prepTime: parseDuration(recipe.prepTime),
       cookTime: parseDuration(recipe.cookTime),
-      servings: recipe.recipeYield || "",
+      servings: Array.isArray(recipe.recipeYield) ? recipe.recipeYield[0] : (recipe.recipeYield || ""),
+      category: Array.isArray(recipe.recipeCategory) ? recipe.recipeCategory.join(", ") : (recipe.recipeCategory || ""),
+      cuisine: Array.isArray(recipe.recipeCuisine) ? recipe.recipeCuisine.join(", ") : (recipe.recipeCuisine || ""),
       image: image || ""
     };
   }
@@ -1836,11 +1897,19 @@ async function fetchFeedDocument(url) {
     }[ch]));
   }
 
+  function safeHttpUrl(value, base) {
+    if (!value) return "";
+    try {
+      const url = new URL(String(value).trim(), base || window.location.href);
+      return (url.protocol === "http:" || url.protocol === "https:") ? url.href : "";
+    } catch { return ""; }
+  }
+
   function stripHtml(html) {
     if (!html) return "";
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return (tmp.textContent || tmp.innerText || "").replace(/\s+/g, " ").trim();
+    // Parse detached markup rather than injecting feed HTML into the live DOM.
+    const doc = new DOMParser().parseFromString(String(html), "text/html");
+    return (doc.body?.textContent || "").replace(/\s+/g, " ").trim();
   }
 
   function showToast(msg, ms = 1800) {
@@ -1876,29 +1945,28 @@ async function fetchFeedDocument(url) {
   }
   $("#themeToggle").addEventListener("click", () => {
     state.theme = state.theme === "dark" ? "light" : "dark";
-    localStorage.setItem("kitchenExeTheme", state.theme);
+    writeStored("kitchenExeTheme", state.theme);
     applyTheme();
   });
   applyTheme();
 
   /* ============ TABS ============ */
-  $$(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      const target = tab.dataset.tab;
-      state.activeTab = target;
-      $$(".tab").forEach(t => t.classList.toggle("active", t === tab));
-      $$(".tab-panel").forEach(p => {
-        p.classList.toggle("active", p.id === "panel-" + target);
-      });
-    });
-  });
+  function activateTab(target) {
+    if (!["feeds", "explore"].includes(target)) return;
+    state.activeTab = target;
+    $$(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.tab === target));
+    $$(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === "panel-" + target));
+  }
+  $$(".tab").forEach(tab => tab.addEventListener("click", () => activateTab(tab.dataset.tab)));
+  const initialTab = window.location.hash.replace(/^#/, "");
+  if (initialTab === "explore" || initialTab === "feeds") activateTab(initialTab);
 
   /* ============================================================ */
   /* ============ FEED TAB ====================================== */
   /* ============================================================ */
 
   function saveFeeds() {
-    localStorage.setItem("kitchenExeFeeds", JSON.stringify(state.feeds));
+    writeStored("kitchenExeFeeds", state.feeds);
     updateFeedCount();
   }
 
@@ -1935,7 +2003,7 @@ async function fetchFeedDocument(url) {
     )
   )}"
 ></span>
-            ${fav ? `<img class="feed-favicon" src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
+            ${fav && f.sourceType !== "tiktok" ? `<img class="feed-favicon" src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : f.sourceType === "tiktok" ? `<span style="font-size:12px;margin-right:5px" title="TikTok source">♪</span>` : ""}
 <span
   class="feed-name"
   title="${escapeHtml(
@@ -2022,15 +2090,66 @@ async function fetchFeedDocument(url) {
     if (!/^https?:\/\//i.test(url)) url = "https://" + url;
     try {
       const u = new URL(url);
-      if (u.hostname.endsWith("substack.com") && u.pathname === "/") url = u.origin + "/feed";
-    } catch {}
-    if (state.feeds.some(f => f.url === url)) { showToast("FEED ALREADY ADDED"); return; }
+      if (!['http:', 'https:'].includes(u.protocol)) throw new Error('INVALID_PROTOCOL');
+      url = KitchenRecipeCore.canonicalUrl(url) || u.href;
+      const normalized = new URL(url);
+      if (normalized.hostname.endsWith("substack.com") && normalized.pathname === "/") url = normalized.origin + "/feed";
+    } catch {
+      showToast("ENTER A VALID HTTP OR HTTPS URL");
+      return;
+    }
+    if (state.feeds.some(f => KitchenRecipeCore.canonicalUrl(f.url) === KitchenRecipeCore.canonicalUrl(url))) { showToast("FEED ALREADY ADDED"); return; }
     state.feeds.push({ url, title: "", status: "loading", categories: [] });
     feedUrlInput.value = "";
     saveFeeds(); renderFeeds();
     showToast("FEED ADDED — FETCHING…");
     fetchFeed(state.feeds.length - 1).then(() => {
       renderFeeds(); renderCatFilters(); renderResults();
+    });
+  }
+
+  function addTikTokFeed() {
+    const profileInput = $("#tiktokProfileInput");
+    const rssInput = $("#tiktokRssInput");
+    const profileUrl = safeHttpUrl(profileInput.value.trim());
+    const rssUrl = safeHttpUrl(rssInput.value.trim());
+    if (!profileUrl || !rssUrl) {
+      showToast("ENTER BOTH THE TIKTOK PROFILE AND RSS URL");
+      return;
+    }
+    let profile;
+    try { profile = new URL(profileUrl); } catch { showToast("INVALID TIKTOK PROFILE URL"); return; }
+    if (!/(^|\.)tiktok\.com$/i.test(profile.hostname) || !/^\/@[A-Za-z0-9._-]+/.test(profile.pathname)) {
+      showToast("USE A PUBLIC TIKTOK PROFILE URL (/@USERNAME)");
+      return;
+    }
+    let rss;
+    try { rss = new URL(rssUrl); } catch { showToast("INVALID RSS URL"); return; }
+    if (!['http:', 'https:'].includes(rss.protocol)) { showToast("RSS URL MUST USE HTTP OR HTTPS"); return; }
+    const canonicalRss = KitchenRecipeCore.canonicalUrl(rss.href) || rss.href;
+    if (state.feeds.some(f => KitchenRecipeCore.canonicalUrl(f.url) === KitchenRecipeCore.canonicalUrl(canonicalRss))) {
+      showToast("THIS RSS FEED IS ALREADY ADDED");
+      return;
+    }
+    const username = profile.pathname.match(/^\/@([^/]+)/)?.[1] || "creator";
+    const feed = {
+      url: canonicalRss,
+      title: `TikTok · @${username}`,
+      sourceType: "tiktok",
+      profileUrl: profile.href,
+      status: "loading",
+      categories: ["TikTok"],
+      posts: []
+    };
+    state.feeds.push(feed);
+    profileInput.value = "";
+    rssInput.value = "";
+    saveFeeds(); renderFeeds(); renderCatFilters();
+    showToast("TIKTOK FEED ADDED — FETCHING…");
+    fetchFeed(state.feeds.length - 1).then(() => {
+      renderFeeds(); renderCatFilters(); renderResults();
+      const panel = document.querySelector(".tiktok-feed-setup");
+      if (feed.status === "ok" && panel) panel.open = false;
     });
   }
 
@@ -2145,7 +2264,7 @@ async function resolveFeedUrl(url) {
 
   function extractPostRss(item, feedTitle, feedLink, feedUrl) {
     const title = item.querySelector("title")?.textContent?.trim() || "(no title)";
-    const link = item.querySelector("link")?.textContent?.trim() || "";
+    const link = safeHttpUrl(item.querySelector("link")?.textContent?.trim() || "", feedUrl);
     const description = item.querySelector("description")?.textContent || "";
     const content = item.querySelector("content\\:encoded")?.textContent ||
                     item.querySelector("encoded")?.textContent || description;
@@ -2154,28 +2273,28 @@ async function resolveFeedUrl(url) {
                    item.querySelector("dc\\:creator")?.textContent?.trim() || "";
     let image = "";
     const enclosure = item.querySelector("enclosure[type^='image']");
-    if (enclosure) image = enclosure.getAttribute("url");
+    if (enclosure) image = safeHttpUrl(enclosure.getAttribute("url"), feedUrl);
     if (!image) {
       const mediaContent = item.querySelector("media\\:content") || item.querySelector("content[url]");
-      if (mediaContent) image = mediaContent.getAttribute("url");
+      if (mediaContent) image = safeHttpUrl(mediaContent.getAttribute("url"), feedUrl);
     }
     if (!image) {
       const mediaThumb = item.querySelector("media\\:thumbnail");
-      if (mediaThumb) image = mediaThumb.getAttribute("url");
+      if (mediaThumb) image = safeHttpUrl(mediaThumb.getAttribute("url"), feedUrl);
     }
     if (!image && content) {
       const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match) image = match[1];
+      if (match) image = safeHttpUrl(match[1], feedUrl);
     }
     if (!image && description) {
       const match = description.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match) image = match[1];
+      if (match) image = safeHttpUrl(match[1], feedUrl);
     }
     return {
       title, link, image,
       excerpt: stripHtml(description).slice(0, 240),
       content: stripHtml(content).slice(0, 2000),
-      date: pubDate ? new Date(pubDate).toISOString() : "",
+      date: safeDateIso(pubDate),
       author, feedTitle, feedLink, feedUrl
     };
   }
@@ -2192,7 +2311,7 @@ async function resolveFeedUrl(url) {
   function extractPostAtom(entry, feedTitle, feedLink, feedUrl) {
     const title = entry.querySelector("title")?.textContent?.trim() || "(no title)";
     const linkEl = entry.querySelector("link[rel='alternate']") || entry.querySelector("link");
-    const link = linkEl?.getAttribute("href") || "";
+    const link = safeHttpUrl(linkEl?.getAttribute("href") || "", feedUrl);
     const summary = entry.querySelector("summary")?.textContent || "";
     const content = entry.querySelector("content")?.textContent || summary;
     const updated = entry.querySelector("updated")?.textContent?.trim() ||
@@ -2203,16 +2322,27 @@ async function resolveFeedUrl(url) {
     if (enclosure) image = enclosure.getAttribute("href");
     if (!image && content) {
       const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match) image = match[1];
+      if (match) image = safeHttpUrl(match[1], feedUrl);
     }
     return {
       title, link, image,
       excerpt: stripHtml(summary).slice(0, 240),
       content: stripHtml(content).slice(0, 2000),
-      date: updated ? new Date(updated).toISOString() : "",
+      date: safeDateIso(updated),
       author, feedTitle, feedLink, feedUrl
     };
   }
+
+function dedupeFeedPosts(posts) {
+  const seen = new Set();
+  return (Array.isArray(posts) ? posts : []).filter(post => {
+    const canonical = KitchenRecipeCore.canonicalUrl(post?.link || "");
+    const key = canonical || `${KitchenRecipeCore.normalizeIngredient(post?.title)}:${safeDateIso(post?.date)}`;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 async function fetchFeed(index) {
   const feed = state.feeds[index];
@@ -2229,7 +2359,7 @@ async function fetchFeed(index) {
     feed.title = feed.title || parsed.feedTitle;
     feed.status = "ok";
     feed.error = "";
-    feed.posts = parsed.posts;
+    feed.posts = dedupeFeedPosts(parsed.posts);
     feed.lastFetched = Date.now();
 
   } catch (err) {
@@ -2244,18 +2374,31 @@ async function fetchFeed(index) {
   rebuildAllPosts();
 }
 
+  let refreshInProgress = false;
   async function refreshAllFeeds() {
     if (!state.feeds.length) { showToast("ADD A FEED FIRST"); return; }
+    if (refreshInProgress) { showToast("FEED REFRESH ALREADY RUNNING"); return; }
+    refreshInProgress = true;
     status.classList.add("show");
     statusText.textContent = "FETCHING FEEDS…";
     statusCount.textContent = state.feeds.length;
-    state.feeds.forEach(f => f.status = "loading");
-    renderFeeds();
-    await Promise.all(state.feeds.map((_, i) => fetchFeed(i)));
-    statusText.textContent = "FEEDS UPDATED";
-    statusCount.textContent = state.allPosts.length;
-    rebuildAllPosts(); renderResults();
-    showToast("FEEDS REFRESHED");
+    let nextIndex = 0;
+    const worker = async () => {
+      while (nextIndex < state.feeds.length) {
+        const index = nextIndex++;
+        await fetchFeed(index);
+      }
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(3, state.feeds.length) }, worker));
+      rebuildAllPosts(); renderResults();
+      const failed = state.feeds.filter(f => f.status === "error").length;
+      statusText.textContent = failed ? `UPDATED · ${failed} FAILED` : "FEEDS UPDATED";
+      statusCount.textContent = state.allPosts.length;
+      showToast(failed ? `${failed} FEED(S) FAILED — PREVIOUS ARTICLES KEPT` : "FEEDS REFRESHED");
+    } finally {
+      refreshInProgress = false;
+    }
   }
 
   function rebuildAllPosts() {
@@ -2281,6 +2424,23 @@ async function fetchFeed(index) {
 
   function filterPosts(posts, forceFeedUrl = null) {
     let filtered = posts;
+    filtered = filtered.filter(p => {
+      const dismissed = state.dismissed.includes(KitchenRecipeCore.canonicalUrl(p.link) || p.link);
+      return state.showDismissed ? dismissed : !dismissed;
+    });
+    if (state.feedSourceFilter && state.feedSourceFilter !== "all") {
+      filtered = filtered.filter(p => {
+        const feed = state.feeds.find(f => f.url === p.feedUrl);
+        const haySource = `${p.feedTitle || ""} ${feed?.url || ""} ${p.link || ""}`;
+        const type = feed?.sourceType || "rss";
+        if (state.feedSourceFilter === "rss") return type !== "tiktok" && !/substack|instagram|reddit/i.test(haySource);
+        return type === state.feedSourceFilter || (state.feedSourceFilter === "substack" && /substack/i.test(haySource)) || (state.feedSourceFilter === "instagram" && /instagram/i.test(haySource)) || (state.feedSourceFilter === "reddit" && /reddit/i.test(haySource));
+      });
+    }
+    if (state.feedCreatorFilter) {
+      const creator = state.feedCreatorFilter.toLowerCase();
+      filtered = filtered.filter(p => `${p.author || ""} ${p.feedTitle || ""}`.toLowerCase().includes(creator));
+    }
     if (state.filters.category !== "all" && state.filters.category !== "unread") {
       const keywords = filterTerms[state.filters.category] || [];
       filtered = filtered.filter(p => {
@@ -2310,6 +2470,11 @@ async function fetchFeed(index) {
     else if (state.sort === "oldest") copy.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
     else if (state.sort === "title") copy.sort((a, b) => a.title.localeCompare(b.title));
     else if (state.sort === "source") copy.sort((a, b) => (a.feedTitle || "").localeCompare(b.feedTitle || ""));
+    else if (state.sort === "relevance") {
+      const terms = String(state.filters.keyword || "").toLowerCase().split(/\s+/).filter(Boolean);
+      const score = p => terms.reduce((n, term) => n + ((p.title || "").toLowerCase().includes(term) ? 3 : 0) + ((p.excerpt || "").toLowerCase().includes(term) ? 1 : 0) + ((p.recipe?.ingredients || []).some(i => String(i).toLowerCase().includes(term)) ? 2 : 0), 0);
+      copy.sort((a, b) => score(b) - score(a) || new Date(b.date || 0) - new Date(a.date || 0));
+    }
     return copy;
   }
 
@@ -2381,21 +2546,22 @@ async function fetchFeed(index) {
       <article class="recipe ${isRead ? "is-read" : ""}" data-url="${escapeHtml(post.link)}">
         <div class="recipe-top">
           <span class="source-badge feed" title="${escapeHtml(post.feedTitle || "")}">
-            ${fav ? `<img src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
+            ${feed?.sourceType === "tiktok" ? "♪ " : fav ? `<img src="${escapeHtml(fav)}" alt="" onerror="this.style.display='none'">` : ""}
             ${escapeHtml((post.feedTitle || "Feed").slice(0, 22))}
           </span>
           <button class="fav ${isSaved ? "saved" : ""}" type="button">${isSaved ? "★" : "☆"}</button>
         </div>
         <div class="recipe-thumb">
-          ${post.image ? `<img src="${escapeHtml(post.image)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
+          ${safeHttpUrl(post.image) ? `<img src="${escapeHtml(safeHttpUrl(post.image))}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
         </div>
         <div class="recipe-body">
           <h3>${escapeHtml(post.title)}</h3>
           <div class="recipe-date">${post.date ? timeAgo(post.date) : ""}${post.author ? " · " + escapeHtml(post.author) : ""}${hasRecipe ? " · 📖 recipe" : ""}</div>
           <div class="recipe-excerpt">${escapeHtml(post.excerpt || "No description")}</div>
           <div class="recipe-actions">
-            <a class="open-recipe" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" data-mark-read>Read ↗</a>
+            <a class="open-recipe" href="${escapeHtml(safeHttpUrl(post.link) || "#")}" target="_blank" rel="noopener noreferrer" data-mark-read>Read ↗</a>
             <button class="mini-btn" data-open-detail title="Details">📖</button>
+            <button class="dismiss-post" data-dismiss-post type="button" title="${state.dismissed.includes(KitchenRecipeCore.canonicalUrl(post.link) || post.link) ? "Restore this post" : "Hide this post"}">${state.dismissed.includes(KitchenRecipeCore.canonicalUrl(post.link) || post.link) ? "↶ Restore" : "× Hide"}</button>
           </div>
         </div>
       </article>
@@ -2424,9 +2590,27 @@ async function fetchFeed(index) {
         const url = a.closest(".recipe").dataset.url;
         if (!state.read.includes(url)) {
           state.read.push(url);
-          localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+          writeStored("kitchenExeRead", state.read);
           updateUnreadBadge();
         }
+      });
+    });
+    results.querySelectorAll("[data-dismiss-post]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        const url = btn.closest(".recipe")?.dataset.url;
+        if (!url) return;
+        const canonical = KitchenRecipeCore.canonicalUrl(url) || url;
+        const idx = state.dismissed.indexOf(canonical);
+        if (idx >= 0) {
+          state.dismissed.splice(idx, 1);
+          showToast("POST RESTORED");
+        } else {
+          state.dismissed.push(canonical);
+          showToast("POST HIDDEN FROM FEED");
+        }
+        writeStored("kitchenExeDismissed", state.dismissed);
+        renderResults();
       });
     });
     results.querySelectorAll("[data-open-detail]").forEach(btn => {
@@ -2456,11 +2640,13 @@ async function fetchFeed(index) {
         url: post.link, title: post.title,
         imageUrl: post.image || "",
         source: post.feedTitle || "",
-        savedAt: Date.now()
+        savedAt: Date.now(),
+        recipe: post.recipe || null,
+        notes: "", tags: []
       });
       showToast("SAVED");
     }
-    localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+    writeStored("kitchenExeSaved", state.saved);
     renderSavedPanel();
   }
 
@@ -2474,8 +2660,8 @@ async function fetchFeed(index) {
     }
     savedList.innerHTML = state.saved.map((s, i) => `
       <div class="saved-item">
-        ${s.imageUrl ? `<img src="${escapeHtml(s.imageUrl)}" alt="" onerror="this.style.display='none'">` : `<div style="width:40px;height:40px;border:1px solid var(--ink);background:var(--soft);flex-shrink:0"></div>`}
-        <div class="saved-title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}</div>
+        ${safeHttpUrl(s.imageUrl) ? `<img src="${escapeHtml(safeHttpUrl(s.imageUrl))}" alt="" onerror="this.style.display='none'">` : `<div style="width:40px;height:40px;border:1px solid var(--ink);background:var(--soft);flex-shrink:0"></div>`}
+        <div class="saved-title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}${s.tags?.length ? `<div style="font:10px var(--mono);color:var(--muted);margin-top:3px">${escapeHtml(s.tags.join(" · "))}</div>` : ""}${s.notes ? `<div style="font:10px var(--mono);color:var(--muted);margin-top:3px">${escapeHtml(s.notes.slice(0,90))}</div>` : ""}</div>
         <div class="saved-actions">
           <button data-open="${i}">↗</button>
           <button data-remove-saved="${i}">×</button>
@@ -2491,7 +2677,7 @@ async function fetchFeed(index) {
     savedList.querySelectorAll("[data-remove-saved]").forEach(btn => {
       btn.addEventListener("click", () => {
         state.saved.splice(parseInt(btn.dataset.removeSaved, 10), 1);
-        localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+        writeStored("kitchenExeSaved", state.saved);
         renderSavedPanel(); renderResults();
       });
     });
@@ -2604,6 +2790,7 @@ async function fetchFeed(index) {
       const src = btn.dataset.src;
       state.exploreSources[src] = !state.exploreSources[src];
       btn.classList.toggle("active", state.exploreSources[src]);
+      if (["tiktok", "instagram", "substack"].includes(src)) renderSocialDiscovery();
     });
   });
 
@@ -2612,11 +2799,10 @@ async function fetchFeed(index) {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(
-        `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`,
-        { signal: controller.signal }
-      );
-      clearTimeout(timer);
+      let res;
+      try {
+        res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`, { signal: controller.signal });
+      } finally { clearTimeout(timer); }
       if (!res.ok) throw new Error("HTTP_" + res.status);
       const data = await res.json();
       if (!data.meals) return [];
@@ -2630,6 +2816,8 @@ async function fetchFeed(index) {
         sourceBadgeClass: "themealdb",
         matchedIngredients: [ingredient],
         allIngredients: [], // se rellena al hacer lookup
+        category: "",
+        totalTime: "",
         mealId: m.idMeal
       }));
     } catch (err) {
@@ -2643,11 +2831,9 @@ async function fetchFeed(index) {
     try {
        const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(
-        `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.mealId}`,
-        { signal: controller.signal }
-      );
-      clearTimeout(timer);
+      let res;
+      try { res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.mealId}`, { signal: controller.signal }); }
+      finally { clearTimeout(timer); }
       const data = await res.json();
       const meal = data.meals?.[0];
       if (!meal) return item;
@@ -2658,6 +2844,8 @@ async function fetchFeed(index) {
         if (name) ings.push({ name: name.toLowerCase(), display: `${measure} ${name}`.trim() });
       }
       item.allIngredients = ings;
+      item.category = meal.strCategory || "";
+      item.cuisine = meal.strArea || "";
       item.meal = meal;
       return item;
     } catch { return item; }
@@ -2676,7 +2864,7 @@ async function fetchFeed(index) {
         return entries.map(entry => {
           const title = entry.querySelector("title")?.textContent?.trim() || "";
           const linkEl = entry.querySelector("link");
-          const link = linkEl?.getAttribute("href") || "";
+          const link = safeHttpUrl(linkEl?.getAttribute("href") || "", "https://www.reddit.com");
           const content = entry.querySelector("content")?.textContent || "";
           const updated = entry.querySelector("updated")?.textContent || "";
           let image = "";
@@ -2694,7 +2882,7 @@ async function fetchFeed(index) {
             matchedIngredients: [query],
             allIngredients: [],
             excerpt: stripHtml(content).slice(0, 240),
-            date: updated ? new Date(updated).toISOString() : "",
+            date: safeDateIso(updated),
             subreddit: sub
           };
         }).filter(Boolean);
@@ -2708,9 +2896,11 @@ async function fetchFeed(index) {
   /* ---------- Feeds search ---------- */
   function searchInFeeds(query) {
     const q = query.toLowerCase();
-    return state.allPosts.filter(p =>
-      (p.title + " " + p.excerpt).toLowerCase().includes(q)
-    ).map(p => ({
+    return state.allPosts.filter(p => {
+      const recipeIngredients = Array.isArray(p.recipe?.ingredients) ? p.recipe.ingredients.join(" ") : "";
+      const haystack = [p.title, p.excerpt, p.content, recipeIngredients].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(q);
+    }).map(p => ({
       id: "feed-" + p.link,
       title: p.title,
       image: p.image,
@@ -2719,54 +2909,88 @@ async function fetchFeed(index) {
       sourceLabel: p.feedTitle || "Feed",
       sourceBadgeClass: "feed",
       matchedIngredients: [query],
-      allIngredients: [],
+      allIngredients: Array.isArray(p.recipe?.ingredients) ? p.recipe.ingredients.map(name => ({ name: String(name).toLowerCase(), display: String(name) })) : [],
+      recipe: p.recipe || null,
+      category: p.recipe?.category || p.category || "",
+      totalTime: p.recipe?.totalTime || "",
+      author: p.author || "",
       excerpt: p.excerpt,
       date: p.date,
       post: p
     }));
   }
 
+
   /* ---------- Merge & rank ---------- */
   function mergeAndRank(allResults, ingredients) {
     const byKey = new Map();
-
+    const normalizedIngredients = ingredients.map(i => KitchenRecipeCore.normalizeIngredient(i));
     allResults.forEach(item => {
-      const key = item.link || item.id;
+      const key = KitchenRecipeCore.canonicalUrl(item.link) || String(item.id || `${item.source || "source"}:${KitchenRecipeCore.normalizeIngredient(item.title)}`);
       if (!byKey.has(key)) {
-        byKey.set(key, { ...item, matchedIngredients: [...item.matchedIngredients] });
+        byKey.set(key, { ...item, matchedIngredients: [...(item.matchedIngredients || [])] });
       } else {
         const existing = byKey.get(key);
-        // Fusionar ingredientes coincidentes
-        item.matchedIngredients.forEach(ing => {
-          if (!existing.matchedIngredients.includes(ing)) existing.matchedIngredients.push(ing);
+        (item.matchedIngredients || []).forEach(ing => {
+          if (!existing.matchedIngredients.some(old => KitchenRecipeCore.normalizeIngredient(old) === KitchenRecipeCore.normalizeIngredient(ing))) existing.matchedIngredients.push(ing);
         });
+        if (!existing.allIngredients?.length && item.allIngredients?.length) existing.allIngredients = item.allIngredients;
+        if (!existing.recipe && item.recipe) existing.recipe = item.recipe;
+        if (!existing.meal && item.meal) existing.meal = item.meal;
+        if (!existing.image && item.image) existing.image = item.image;
+        if (!existing.excerpt && item.excerpt) existing.excerpt = item.excerpt;
       }
     });
 
-    // Ahora, para TheMealDB, comprobamos cuántos de los ingredientes del usuario
-    // aparecen realmente en la receta hidratada. Pero eso requiere lookup → lo
-    // hacemos solo para los que ya tienen meal hidratado.
-    const merged = [...byKey.values()];
-
-    merged.forEach(item => {
-      // Score base: número de ingredientes del usuario que matchearon en la búsqueda
-      let score = item.matchedIngredients.length;
-      // Bonus si la receta contiene más ingredientes del usuario
-      if (item.allIngredients?.length) {
-        const userSet = ingredients.map(i => i.toLowerCase());
-        let extraHits = 0;
-        item.allIngredients.forEach(ri => {
-          const already = item.matchedIngredients.some(m => ri.name.includes(m));
-          if (already) return;
-          const hit = userSet.some(u => ri.name.includes(u) || u.includes(ri.name));
-          if (hit) extraHits++;
-        });
-        score += extraHits;
+    return [...byKey.values()].map(item => {
+      const ingredientNames = (item.allIngredients || []).map(ri => KitchenRecipeCore.normalizeIngredient(typeof ri === "string" ? ri : ri.name || ri.display || ""));
+      const text = KitchenRecipeCore.normalizeIngredient([item.title, item.excerpt, item.description].filter(Boolean).join(" "));
+      const hits = normalizedIngredients.filter(ingredient => {
+        if (ingredientNames.length) return ingredientNames.some(name => KitchenRecipeCore.ingredientMatches(name, ingredient));
+        return KitchenRecipeCore.ingredientMatches(text, ingredient);
+      });
+      const matched = [...new Set(hits)];
+      item.matchedIngredients = matched;
+      item.matchCount = matched.length;
+      item.matchRatio = normalizedIngredients.length ? matched.length / normalizedIngredients.length : 0;
+      const structuredBonus = ingredientNames.length ? 2 : 0;
+      const completenessBonus = (item.recipe?.instructions?.length ? 1 : 0) + (item.image ? 0.25 : 0);
+      const relevance = normalizedIngredients.reduce((sum, ingredient) => sum + (text.includes(ingredient) ? 1 : 0), 0);
+      item.score = Math.round((item.matchRatio * 100) + structuredBonus + completenessBonus + relevance * 2);
+      item.matchLabel = ingredientNames.length ? "ingredient list checked" : "text match";
+      item.creator = item.author || item.post?.author || "";
+      item.category = item.category || item.recipe?.category || item.meal?.strCategory || "";
+      return item;
+    }).filter(item => {
+      if (item.matchCount <= 0) return false;
+      const haystack = KitchenRecipeCore.normalizeIngredient([
+        item.title, item.excerpt, item.description,
+        ...(item.allIngredients || []).map(v => typeof v === "string" ? v : (v.name || v.display || "")),
+        ...(item.recipe?.ingredients || [])
+      ].join(" "));
+      const excluded = state.exploreExcludedIngredients.map(KitchenRecipeCore.normalizeIngredient).filter(Boolean);
+      if (excluded.some(ex => KitchenRecipeCore.ingredientMatches(haystack, ex))) return false;
+      const maxTime = Number(state.exploreMaxTime) || 0;
+      if (maxTime) {
+        const duration = String(item.totalTime || item.recipe?.totalTime || "");
+        const mins = KitchenRecipeCore.durationToMinutes(duration);
+        if (!mins || mins > maxTime) return false;
       }
-      item.score = score;
+      const type = state.exploreDishType;
+      if (type !== "all") {
+        const cat = KitchenRecipeCore.normalizeIngredient([item.category, item.title, item.excerpt, item.cuisine || ""].join(" "));
+        const typeTerms = {
+          starter: ["starter", "appetizer", "snack", "dip", "tapas"],
+          main: ["main", "dinner", "lunch", "chicken", "beef", "fish", "pasta", "curry", "rice"],
+          dessert: ["dessert", "cake", "cookie", "pudding", "ice cream", "brownie", "sweet"],
+          side: ["side", "salad", "potato", "vegetable", "garnish"],
+          breakfast: ["breakfast", "pancake", "porridge", "omelette", "omelet", "toast", "granola"],
+          vegetarian: ["vegetarian", "vegan", "tofu", "lentil", "chickpea", "bean", "vegetable", "spinach", "mushroom"]
+        }[type] || [];
+        if (!typeTerms.some(term => cat.includes(KitchenRecipeCore.normalizeIngredient(term)))) return false;
+      }
+      return true;
     });
-
-    return merged;
   }
 
   async function runExploreSearch() {
@@ -2775,68 +2999,91 @@ async function fetchFeed(index) {
       ingInput.focus();
       return;
     }
-
+    const searchButton = $("#exploreSearchBtn");
+    if (searchButton) searchButton.disabled = true;
     exploreStatus.classList.add("show");
     exploreStatusText.textContent = "SEARCHING…";
     exploreStatusCount.textContent = "0";
-
     exploreResults.innerHTML = Array(6).fill(0).map(() => `
-      <article class="recipe">
-        <div class="recipe-top"><span class="skeleton" style="width:70px;height:14px"></span></div>
-        <div class="recipe-thumb"><div class="skeleton" style="width:100%;height:100%"></div></div>
-        <div class="recipe-body">
-          <div class="skeleton" style="height:18px;width:80%;margin-bottom:8px"></div>
-          <div class="skeleton" style="height:12px;width:60%;margin-bottom:12px"></div>
-          <div class="skeleton" style="height:12px;width:100%"></div>
-        </div>
-      </article>
-    `).join("");
+      <article class="recipe"><div class="recipe-top"><span class="skeleton" style="width:70px;height:14px"></span></div>
+      <div class="recipe-thumb"><div class="skeleton" style="width:100%;height:100%"></div></div>
+      <div class="recipe-body"><div class="skeleton" style="height:18px;width:80%;margin-bottom:8px"></div><div class="skeleton" style="height:12px;width:60%;margin-bottom:12px"></div><div class="skeleton" style="height:12px;width:100%"></div></div></article>`).join("");
 
+    try {
+    state.exploreExcludedIngredients = String($("#excludeIngredientsInput")?.value || "")
+      .split(",").map(v => v.trim()).filter(Boolean).map(v => v.toLowerCase());
+    state.exploreMaxTime = Number($("#maxCookTime")?.value || 0);
+    state.exploreDishType = $("#dishTypeFilter")?.value || "all";
     const all = [];
-
-    // TheMealDB: consultamos por CADA ingrediente (limitado al primero para free tier,
-    // pero probamos con todos y fusionamos)
-    if (state.exploreSources.themealdb) {
-      // TheMealDB free tier: filter.php?i=X solo busca por 1 ingrediente.
-      // Hacemos consultas en paralelo y fusionamos.
-      const promises = state.exploreIngredients.map(ing => searchTheMealDBIngredient(ing));
-      const perIngredient = await Promise.all(promises);
-      perIngredient.forEach(arr => all.push(...arr));
-    }
-
-    // Reddit: buscamos con la query combinada
-    if (state.exploreSources.reddit) {
-      const query = state.exploreIngredients.join(" ");
-      const redditResults = await searchReddit(query);
-      all.push(...redditResults);
-    }
-
-    // Feeds: buscar en posts guardados
-    if (state.exploreSources.feeds) {
-      state.exploreIngredients.forEach(ing => {
-        all.push(...searchInFeeds(ing));
+    const failures = [];
+    const tasks = [];
+    if (state.exploreSources.themealdb) tasks.push((async () => {
+      const responses = await Promise.allSettled(state.exploreIngredients.map(ing => searchTheMealDBIngredient(ing)));
+      responses.forEach((result, index) => {
+        if (result.status === "fulfilled") all.push(...result.value);
+        else failures.push(`TheMealDB (${state.exploreIngredients[index]})`);
       });
-    }
+    })());
+    if (state.exploreSources.reddit) tasks.push((async () => {
+      const query = state.exploreIngredients.join(" OR ");
+      try { all.push(...await searchReddit(query)); } catch { failures.push("Reddit"); }
+    })());
+    if (state.exploreSources.feeds) tasks.push((async () => {
+      const candidates = new Map();
+      state.exploreIngredients.forEach(ing => searchInFeeds(ing).forEach(item => {
+        const key = KitchenRecipeCore.canonicalUrl(item.link) || item.id;
+        const prior = candidates.get(key);
+        if (prior) prior.matchedIngredients.push(ing); else candidates.set(key, item);
+      }));
+      all.push(...candidates.values());
+    })());
+    await Promise.allSettled(tasks);
 
-    // Hidratar los primeros N de TheMealDB para tener ingredientes completos
-    const mealDbItems = all.filter(r => r.source === "themealdb").slice(0, 30);
-    await Promise.all(mealDbItems.map(item => hydrateMealDBRecipe(item)));
+    // Hydrate unique meals, with a strict concurrency limit to avoid burst requests.
+    const meals = [...new Map(all.filter(r => r.source === "themealdb").map(r => [r.mealId, r])).values()].slice(0, 60);
+    let cursor = 0;
+    const hydrateWorker = async () => { while (cursor < meals.length) { const item = meals[cursor++]; await hydrateMealDBRecipe(item); } };
+    await Promise.all(Array.from({ length: Math.min(4, meals.length) }, hydrateWorker));
 
-    // Merge + rank
     const ranked = mergeAndRank(all, state.exploreIngredients);
-    ranked.sort((a, b) => b.score - a.score);
-
+    ranked.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
     state.exploreResults = ranked;
     state.exploreVisible = 12;
-
-    exploreStatusText.textContent = "SEARCH COMPLETE";
+    renderSocialDiscovery();
+    exploreStatusText.textContent = failures.length ? `PARTIAL RESULTS · ${failures.length} SOURCE(S) FAILED` : "SEARCH COMPLETE";
     exploreStatusCount.textContent = ranked.length;
-
     renderExploreResults();
+    if (failures.length) showToast(`PARTIAL RESULTS — CHECK SOURCE ACCESS`, 3000);
+    } catch (error) {
+      console.error("Kitchen.exe search failed:", error);
+      exploreStatusText.textContent = "SEARCH FAILED";
+      exploreStatusCount.textContent = "0";
+      exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">⚠️</div><p>The search could not be completed. Your feeds and saved data are unchanged. Check the browser console or try again.</p></div>`;
+      showToast("SEARCH FAILED — TRY AGAIN", 3000);
+    } finally {
+      if (searchButton) searchButton.disabled = false;
+    }
+  }
+
+  function renderSocialDiscovery() {
+    const panel = $("#socialDiscovery");
+    if (!panel) return;
+    const selected = Object.keys(state.exploreSources).filter(key => ["tiktok", "instagram", "substack"].includes(key) && state.exploreSources[key]);
+    if (!selected.length || !state.exploreIngredients.length) { panel.hidden = true; panel.innerHTML = ""; return; }
+    const query = state.exploreIngredients.join(" ");
+    const q = encodeURIComponent(query);
+    const links = {
+      tiktok: { label: "Search TikTok ↗", url: `https://www.tiktok.com/search?q=${q}` },
+      instagram: { label: "Find Instagram posts ↗", url: `https://www.google.com/search?q=${encodeURIComponent("site:instagram.com " + query + " recipe")}` },
+      substack: { label: "Search Substack ↗", url: `https://www.google.com/search?q=${encodeURIComponent("site:substack.com " + query + " recipe")}` }
+    };
+    panel.hidden = false;
+    panel.innerHTML = `<h3>Social discovery · external search</h3><div class="social-discovery-links">${selected.map(key => `<a class="social-discovery-link" href="${links[key].url}" target="_blank" rel="noopener noreferrer">${links[key].label}</a>`).join("")}</div><p class="source-note">These links open public search pages. Kitchen.exe does not scrape or claim to index results from these platforms.</p>`;
   }
 
   function sortExploreResults(results) {
-    const copy = [...results];
+    let copy = [...results];
+    if (state.exploreMatchMode === "all") copy = copy.filter(item => (item.matchCount ?? 0) >= state.exploreIngredients.length);
     if (state.exploreSort === "match") copy.sort((a, b) => b.score - a.score);
     else if (state.exploreSort === "title") copy.sort((a, b) => a.title.localeCompare(b.title));
     else if (state.exploreSort === "source") copy.sort((a, b) => a.sourceLabel.localeCompare(b.sourceLabel));
@@ -2844,20 +3091,20 @@ async function fetchFeed(index) {
   }
 
   function renderExploreResults() {
-    if (!state.exploreResults.length) {
-      exploreTitle.textContent = "No results";
-      exploreSubtitle.textContent = "Try different ingredients or sources.";
-      exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No recipes found with those ingredients. Try fewer, or toggle more sources.</p></div>`;
+    const sorted = sortExploreResults(state.exploreResults);
+    if (!sorted.length) {
+      exploreTitle.textContent = "No matching recipes";
+      exploreSubtitle.textContent = state.exploreMatchMode === "all" ? "No result contains every selected ingredient. Try ‘Any selected ingredient’." : "Try different ingredients or enable more sources.";
+      exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No recipes match the current filters. Try fewer ingredients, change the match mode, or enable more sources.</p></div>`;
       exploreFooterStats.textContent = "0 RESULTS";
       return;
     }
 
-    const sorted = sortExploreResults(state.exploreResults);
     const toRender = sorted.slice(0, state.exploreVisible);
 
-    exploreTitle.textContent = `${state.exploreResults.length} recipes found`;
-    const sourcesUsed = [...new Set(state.exploreResults.map(r => r.sourceLabel))];
-    exploreSubtitle.textContent = `From ${sourcesUsed.length} source${sourcesUsed.length === 1 ? "" : "s"}: ${sourcesUsed.slice(0, 4).join(", ")}${sourcesUsed.length > 4 ? "…" : ""}`;
+    exploreTitle.textContent = `${sorted.length} recipes found`;
+    const sourcesUsed = [...new Set(sorted.map(r => r.sourceLabel))];
+    exploreSubtitle.textContent = `From ${sourcesUsed.length} source${sourcesUsed.length === 1 ? "" : "s"}: ${sourcesUsed.slice(0, 4).join(", ")}${sourcesUsed.length > 4 ? "…" : ""}${state.exploreMatchMode === "all" ? " · all ingredients required" : " · partial matches allowed"}${state.exploreExcludedIngredients.length ? " · exclusions applied" : ""}${state.exploreMaxTime ? ` · ≤ ${state.exploreMaxTime} min (known times only)` : ""}`;
 
     exploreResults.innerHTML = toRender.map(exploreCardHtml).join("") + exploreLoadMoreHtml(sorted.length, toRender.length);
 
@@ -2866,7 +3113,7 @@ async function fetchFeed(index) {
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const article = btn.closest(".recipe");
-        const item = state.exploreResults.find(r => (r.link || r.id) === article.dataset.url);
+        const item = state.exploreResults.find(r => (KitchenRecipeCore.canonicalUrl(r.link) || r.id) === article.dataset.url);
         if (!item) return;
         if (item.source === "themealdb") {
           if (!item.meal) await hydrateMealDBRecipe(item);
@@ -2883,7 +3130,7 @@ async function fetchFeed(index) {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const article = btn.closest(".recipe");
-        const item = state.exploreResults.find(r => (r.link || r.id) === article.dataset.url);
+        const item = state.exploreResults.find(r => (KitchenRecipeCore.canonicalUrl(r.link) || r.id) === article.dataset.url);
         if (!item) return;
         toggleExploreSaved(item);
         btn.classList.toggle("saved");
@@ -2911,11 +3158,11 @@ async function fetchFeed(index) {
   function exploreCardHtml(item) {
     const isSaved = state.saved.some(s => s.url === (item.link || item.id));
     const dots = state.exploreIngredients.map(ing => {
-      const hit = item.matchedIngredients.some(m => m.includes(ing) || ing.includes(m));
+      const hit = item.matchedIngredients.some(m => KitchenRecipeCore.normalizeIngredient(m) === KitchenRecipeCore.normalizeIngredient(ing));
       return `<span class="match-dot ${hit ? "hit" : ""}" title="${escapeHtml(ing)}${hit ? " ✓" : ""}"></span>`;
     }).join("");
     return `
-      <article class="recipe" data-url="${escapeHtml(item.link || item.id)}">
+      <article class="recipe" data-url="${escapeHtml(KitchenRecipeCore.canonicalUrl(item.link) || item.id)}">
         <div class="recipe-top">
           <span class="source-badge ${item.sourceBadgeClass || "feed"}">${escapeHtml(item.sourceLabel)}</span>
           <div style="display:flex;gap:6px;align-items:center">
@@ -2924,17 +3171,17 @@ async function fetchFeed(index) {
           </div>
         </div>
         <div class="recipe-thumb">
-          ${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
+          ${safeHttpUrl(item.image) ? `<img src="${escapeHtml(safeHttpUrl(item.image))}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'thumb-placeholder\\'>🍽️</div>'">` : `<div class="thumb-placeholder">🍽️</div>`}
         </div>
         <div class="recipe-body">
           <h3>${escapeHtml(item.title)}</h3>
           <div class="recipe-date">
-            Score ${item.score} · ${item.matchedIngredients.length}/${state.exploreIngredients.length} matched
+            ${item.matchCount ?? item.matchedIngredients.length}/${state.exploreIngredients.length} ingredients · ${escapeHtml(item.matchLabel || "match")}
             ${item.date ? " · " + timeAgo(item.date) : ""}
           </div>
           <div class="recipe-excerpt">${escapeHtml(item.excerpt || "Click for details")}</div>
           <div class="recipe-actions">
-            <a class="open-recipe" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Open ↗</a>
+            <a class="open-recipe" href="${escapeHtml(safeHttpUrl(item.link) || "#")}" target="_blank" rel="noopener noreferrer">Open ↗</a>
             <button class="mini-btn" data-explore-detail title="Details">📖</button>
           </div>
         </div>
@@ -2943,8 +3190,8 @@ async function fetchFeed(index) {
   }
 
   function toggleExploreSaved(item) {
-    const url = item.link || item.id;
-    const idx = state.saved.findIndex(s => s.url === url);
+    const url = KitchenRecipeCore.canonicalUrl(item.link) || item.id;
+    const idx = state.saved.findIndex(s => (KitchenRecipeCore.canonicalUrl(s.url) || s.url) === url);
     if (idx >= 0) {
       state.saved.splice(idx, 1);
       showToast("REMOVED FROM SAVED");
@@ -2953,11 +3200,21 @@ async function fetchFeed(index) {
         url, title: item.title,
         imageUrl: item.image || "",
         source: item.sourceLabel || "",
-        savedAt: Date.now()
+        savedAt: Date.now(),
+        recipe: item.recipe || (item.meal ? {
+          ingredients: item.allIngredients?.map(i => i.display || i.name) || [],
+          instructions: String(item.meal.strInstructions || "").split(/\r?\n+/).map(v => v.trim()).filter(Boolean),
+          category: item.meal.strCategory || "",
+          cuisine: item.meal.strArea || "",
+          image: item.meal.strMealThumb || "",
+          totalTime: "",
+          servings: ""
+        } : null),
+        notes: "", tags: []
       });
       showToast("SAVED");
     }
-    localStorage.setItem("kitchenExeSaved", JSON.stringify(state.saved));
+    writeStored("kitchenExeSaved", state.saved);
     renderSavedPanel();
   }
 
@@ -2981,7 +3238,7 @@ async function fetchFeed(index) {
 
     modalBody.innerHTML = `
       <div class="modal-hero">
-        <img src="${escapeHtml(meal.strMealThumb)}" alt="">
+        <img src="${escapeHtml(safeHttpUrl(meal.strMealThumb) || "")}" alt="">
         <div class="modal-hero-info">
           <h3>${escapeHtml(meal.strMeal)}</h3>
           <div class="modal-meta">
@@ -2989,8 +3246,8 @@ async function fetchFeed(index) {
             ${meal.strArea ? " · " + escapeHtml(meal.strArea) : ""}
           </div>
           <div class="modal-actions">
-            <a class="modal-action-btn primary" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Open original ↗</a>
-            <button class="modal-action-btn" id="modalExportBtn">↧ Export .md</button>
+            <a class="modal-action-btn primary" href="${escapeHtml(safeHttpUrl(item.link) || "#")}" target="_blank" rel="noopener noreferrer">Open original ↗</a>
+            <button class="modal-action-btn" id="modalExportMealBtn">↧ Export .md</button>
           </div>
         </div>
       </div>
@@ -3002,12 +3259,31 @@ async function fetchFeed(index) {
         <h4>Instructions</h4>
         <div class="modal-instructions">${escapeHtml(meal.strInstructions || "")}</div>
       </div>
+      <div class="recipe-notes-editor">
+        <label>Personal notes<textarea id="mealPersonalNotes" placeholder="What would you change next time?">${escapeHtml((state.saved.find(s => (KitchenRecipeCore.canonicalUrl(s.url) || s.url) === (KitchenRecipeCore.canonicalUrl(item.link) || item.id)) || {}).notes || "")}</textarea></label>
+        <label>Tags, separated by commas<input id="mealPersonalTags" type="text" placeholder="quick dinner, meal prep" value="${escapeHtml(((state.saved.find(s => (KitchenRecipeCore.canonicalUrl(s.url) || s.url) === (KitchenRecipeCore.canonicalUrl(item.link) || item.id)) || {}).tags || []).join(", "))}"></label>
+        <button class="modal-action-btn primary" id="saveMealMetadataBtn" type="button">Save notes & tags</button>
+      </div>
     `;
 
     modalBackdrop.classList.add("show");
     document.body.style.overflow = "hidden";
 
-    $("#modalExportBtn").addEventListener("click", () => {
+    $("#saveMealMetadataBtn")?.addEventListener("click", () => {
+      const url = KitchenRecipeCore.canonicalUrl(item.link) || item.id;
+      let saved = state.saved.find(s => (KitchenRecipeCore.canonicalUrl(s.url) || s.url) === url);
+      if (!saved) {
+        saved = { url, title: meal.strMeal, imageUrl: meal.strMealThumb || "", source: item.sourceLabel || "TheMealDB", savedAt: Date.now() };
+        state.saved.push(saved);
+      }
+      saved.notes = String($("#mealPersonalNotes")?.value || "").trim();
+      saved.tags = String($("#mealPersonalTags")?.value || "").split(",").map(v => v.trim()).filter(Boolean).slice(0, 30);
+      saved.recipe = { ingredients: ings.map(i => i.display), instructions: String(meal.strInstructions || "").split(/\r?\n+/).map(v => v.trim()).filter(Boolean), category: meal.strCategory || "", cuisine: meal.strArea || "", image: meal.strMealThumb || "", totalTime: "", servings: "" };
+      writeStored("kitchenExeSaved", state.saved);
+      renderSavedPanel();
+      showToast("RECIPE NOTES & TAGS SAVED");
+    });
+    $("#modalExportMealBtn").addEventListener("click", () => {
       exportMealAsMarkdown(item, meal, ings);
     });
   }
@@ -3036,6 +3312,7 @@ async function fetchFeed(index) {
   $("#exploreClearBtn").addEventListener("click", () => {
     state.exploreIngredients = [];
     renderExploreIngredients();
+    renderSocialDiscovery();
     exploreResults.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔎</div><p>Add up to 5 ingredients above, then press <strong>Search recipes</strong>.</p></div>`;
     exploreTitle.textContent = "Search results";
     exploreSubtitle.textContent = "Add ingredients and press search.";
@@ -3057,6 +3334,11 @@ async function fetchFeed(index) {
     state.exploreSort = exploreSortSelect.value;
     renderExploreResults();
   });
+  const exploreMatchMode = $("#exploreMatchMode");
+  if (exploreMatchMode) exploreMatchMode.addEventListener("change", () => {
+    state.exploreMatchMode = exploreMatchMode.value;
+    renderExploreResults();
+  });
 
   /* ============================================================ */
   /* ============ MODAL (feeds tab) ============================= */
@@ -3072,7 +3354,7 @@ async function fetchFeed(index) {
     }
     if (!state.read.includes(post.link)) {
       state.read.push(post.link);
-      localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+      writeStored("kitchenExeRead", state.read);
       updateUnreadBadge();
     }
     renderModalContent(post);
@@ -3122,15 +3404,15 @@ async function fetchFeed(index) {
 
     modalBody.innerHTML = `
       <div class="modal-hero">
-        ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<div style="border:2px solid var(--ink);background:var(--soft);min-height:200px;display:grid;place-items:center;font-size:60px">🍽️</div>`}
+        ${safeHttpUrl(image) ? `<img src="${escapeHtml(safeHttpUrl(image))}" alt="">` : `<div style="border:2px solid var(--ink);background:var(--soft);min-height:200px;display:grid;place-items:center;font-size:60px">🍽️</div>`}
         <div class="modal-hero-info">
           <h3>${escapeHtml(post.title)}</h3>
           <div class="modal-meta">${post.date ? escapeHtml(timeAgo(post.date)) : ""}${metaParts.length ? " · " + metaParts.map(escapeHtml).join(" · ") : ""}</div>
           <div style="font:12px/1.5 var(--mono);color:var(--muted);margin-bottom:10px">${escapeHtml(post.excerpt || "")}</div>
           <div class="modal-actions">
-            <a class="modal-action-btn primary" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Read original ↗</a>
+            <a class="modal-action-btn primary" href="${escapeHtml(safeHttpUrl(post.link) || "#")}" target="_blank" rel="noopener noreferrer">Read original ↗</a>
             <button class="modal-action-btn" id="modalSaveBtn">${state.saved.some(s => s.url === post.link) ? "★ Saved" : "☆ Save"}</button>
-            <button class="modal-action-btn" id="modalExportBtn">↧ Export .md</button>
+            <button class="modal-action-btn" id="modalExportPostBtn">↧ Export .md</button>
             <button class="modal-action-btn" id="modalCopyBtn">🔗 Copy link</button>
           </div>
         </div>
@@ -3138,6 +3420,11 @@ async function fetchFeed(index) {
       ${ingredientsHtml}
       ${instructionsHtml}
       ${!recipe ? `<div class="modal-enrich-note">📖 This post doesn't have structured recipe data. Read the original article for the full recipe.</div>` : ""}
+      <div class="recipe-notes-editor">
+        <label>Personal notes<textarea id="recipePersonalNotes" placeholder="What would you change next time?">${escapeHtml((state.saved.find(s => s.url === post.link) || {}).notes || "")}</textarea></label>
+        <label>Tags, separated by commas<input id="recipePersonalTags" type="text" placeholder="quick dinner, meal prep" value="${escapeHtml(((state.saved.find(s => s.url === post.link) || {}).tags || []).join(", "))}"></label>
+        <button class="modal-action-btn primary" id="saveRecipeMetadataBtn" type="button">Save notes & tags</button>
+      </div>
     `;
 
     modalBackdrop.classList.add("show");
@@ -3154,7 +3441,20 @@ async function fetchFeed(index) {
         showToast("LINK COPIED");
       } catch { showToast("COPY FAILED"); }
     });
-    $("#modalExportBtn").addEventListener("click", () => exportPostAsMarkdown(post));
+    $("#saveRecipeMetadataBtn")?.addEventListener("click", () => {
+      let saved = state.saved.find(s => s.url === post.link);
+      if (!saved) {
+        saved = { url: post.link, title: post.title, imageUrl: post.image || "", source: post.feedTitle || "", savedAt: Date.now() };
+        state.saved.push(saved);
+      }
+      saved.notes = String($("#recipePersonalNotes")?.value || "").trim();
+      saved.tags = String($("#recipePersonalTags")?.value || "").split(",").map(v => v.trim()).filter(Boolean).slice(0, 30);
+      saved.recipe = post.recipe || saved.recipe || null;
+      writeStored("kitchenExeSaved", state.saved);
+      renderSavedPanel();
+      showToast("RECIPE NOTES & TAGS SAVED");
+    });
+    $("#modalExportPostBtn").addEventListener("click", () => exportPostAsMarkdown(post));
 
     const scaleButtons = $("#scaleButtons");
     if (scaleButtons) {
@@ -3247,7 +3547,8 @@ async function fetchFeed(index) {
 
   $("#exportFeedsBtn").addEventListener("click", () => {
     const data = JSON.stringify(state.feeds.map(f => ({
-      url: f.url, title: f.title, categories: f.categories || []
+      url: f.url, title: f.title, categories: f.categories || [],
+      sourceType: f.sourceType || "rss", profileUrl: f.profileUrl || ""
     })), null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
@@ -3268,7 +3569,7 @@ async function fetchFeed(index) {
       let added = 0;
       imported.forEach(item => {
         if (item.url && !state.feeds.some(f => f.url === item.url)) {
-          state.feeds.push({ url: item.url, title: item.title || "", categories: item.categories || [], status: "" });
+          state.feeds.push({ url: item.url, title: item.title || "", categories: item.categories || [], sourceType: item.sourceType === "tiktok" ? "tiktok" : "rss", profileUrl: safeHttpUrl(item.profileUrl || ""), status: "" });
           added++;
         }
       });
@@ -3283,7 +3584,7 @@ async function fetchFeed(index) {
   /* ============ AUTO-REFRESH ============ */
   function setAutoRefresh(minutes) {
     state.autoRefreshMin = minutes;
-    localStorage.setItem("kitchenExeAutoRefresh", String(minutes));
+    writeStored("kitchenExeAutoRefresh", String(minutes));
     if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
     if (minutes > 0) {
       state.autoRefreshTimer = setInterval(() => {
@@ -3297,6 +3598,10 @@ async function fetchFeed(index) {
 
   /* ============ EVENTS (feeds tab) ============ */
   feedAddBtn.addEventListener("click", addFeed);
+  $("#tiktokAddBtn").addEventListener("click", addTikTokFeed);
+  $("#tiktokRssInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addTikTokFeed(); }
+  });
   feedUrlInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); addFeed(); }
   });
@@ -3321,13 +3626,41 @@ async function fetchFeed(index) {
   });
   $("#markAllReadBtn").addEventListener("click", () => {
     state.read = state.allPosts.map(p => p.link);
-    localStorage.setItem("kitchenExeRead", JSON.stringify(state.read));
+    writeStored("kitchenExeRead", state.read);
     updateUnreadBadge(); renderResults();
     showToast("MARKED ALL READ");
   });
   sortSelect.addEventListener("change", () => {
     state.sort = sortSelect.value;
     state.visibleCount = 9;
+    const unifiedSort = $("#feedSortMode");
+    if (unifiedSort) unifiedSort.value = state.sort;
+    renderResults();
+  });
+  $("#feedSourceFilter")?.addEventListener("change", e => {
+    state.feedSourceFilter = e.target.value;
+    state.visibleCount = 9;
+    renderResults();
+  });
+  let creatorDebounce;
+  $("#feedCreatorFilter")?.addEventListener("input", e => {
+    clearTimeout(creatorDebounce);
+    creatorDebounce = setTimeout(() => {
+      state.feedCreatorFilter = e.target.value.trim();
+      state.visibleCount = 9;
+      renderResults();
+    }, 180);
+  });
+  $("#feedSortMode")?.addEventListener("change", e => {
+    state.sort = e.target.value;
+    sortSelect.value = ["date", "oldest", "title", "source"].includes(state.sort) ? state.sort : "date";
+    state.visibleCount = 9;
+    renderResults();
+  });
+  $("#toggleDismissedBtn")?.addEventListener("click", e => {
+    state.showDismissed = !state.showDismissed;
+    e.currentTarget.classList.toggle("active", state.showDismissed);
+    e.currentTarget.textContent = state.showDismissed ? "Back to feed" : "Show discarded";
     renderResults();
   });
 
