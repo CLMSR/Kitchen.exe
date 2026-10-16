@@ -1340,13 +1340,16 @@
             </div>
             <details class="tiktok-feed-setup" style="margin:10px 0 14px;padding:10px 12px;border:1px solid var(--border, #ddd);border-radius:10px;background:var(--surface, transparent)">
               <summary style="cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.04em">＋ ADD TIKTOK ACCOUNT</summary>
-              <p style="font-size:12px;line-height:1.5;margin:10px 0;color:var(--muted, #666)">Create an RSS feed for a public TikTok profile, then paste its RSS URL here. No TikTok API or AI is used.</p>
-              <label for="tiktokProfileInput" style="display:block;font-size:11px;margin:8px 0 4px">TikTok profile URL</label>
-              <input class="feed-input" id="tiktokProfileInput" type="url" placeholder="https://www.tiktok.com/@creator" autocomplete="off" style="width:100%;box-sizing:border-box">
-              <div style="margin:8px 0;font-size:12px"><a href="https://rss.app/rss-feed/tiktok-to-rss" target="_blank" rel="noopener noreferrer">Open TikTok RSS generator ↗</a></div>
-              <label for="tiktokRssInput" style="display:block;font-size:11px;margin:8px 0 4px">Generated RSS URL</label>
-              <input class="feed-input" id="tiktokRssInput" type="url" placeholder="Paste the RSS.app feed URL" autocomplete="off" style="width:100%;box-sizing:border-box">
-              <button class="feed-add-btn" id="tiktokAddBtn" style="width:100%;margin-top:9px">+ Add TikTok feed</button>
+              <p style="font-size:12px;line-height:1.5;margin:10px 0;color:var(--muted, #666)">Paste a public TikTok profile or @username. Kitchen.exe will generate an RSSHub feed automatically — no RSS.app account, TikTok API or AI needed.</p>
+              <label for="tiktokProfileInput" style="display:block;font-size:11px;margin:8px 0 4px">TikTok username or profile URL</label>
+              <input class="feed-input" id="tiktokProfileInput" type="text" placeholder="@creator or https://www.tiktok.com/@creator" autocomplete="off" style="width:100%;box-sizing:border-box">
+              <div style="margin:8px 0;font-size:12px;color:var(--muted, #666)">Uses the public RSSHub instance. Availability depends on TikTok and RSSHub; some profiles may temporarily fail.</div>
+              <details style="margin-top:8px">
+                <summary style="cursor:pointer;font-size:11px;color:var(--muted, #666)">Advanced: paste another RSS URL (optional)</summary>
+                <label for="tiktokRssInput" style="display:block;font-size:11px;margin:8px 0 4px">Custom RSS URL</label>
+                <input class="feed-input" id="tiktokRssInput" type="url" placeholder="https://…/your-tiktok-feed.xml" autocomplete="off" style="width:100%;box-sizing:border-box">
+              </details>
+              <button class="feed-add-btn" id="tiktokAddBtn" style="width:100%;margin-top:9px">+ Add TikTok account</button>
             </details>
             <div class="feed-list" id="feedList"></div>
             <div class="cat-filter-row" id="catFilterRow" style="display:none"></div>
@@ -1680,7 +1683,7 @@
    * Fetch con timeout + rotación de proxies + fallback a directo.
    * Devuelve la Response o lanza error.
    */
-  async function fetchWithProxy(url, options = {}, timeoutMs = 12000) {
+  async function fetchWithProxy(url, options = {}, timeoutMs = 12000, maxCandidates = null) {
     const errors = [];
     const requestOptions = {
       ...options,
@@ -1689,16 +1692,33 @@
         ...(options.headers || {})
       }
     };
-    const candidates = [url, ...CORS_PROXIES.map((_, i) => proxied(url, i))];
-    for (let i = 0; i < candidates.length; i++) {
+    const isTikTokRssHubUrl = (() => {
+      try {
+        const parsed = new URL(url);
+        return /\/tiktok\/user\//i.test(parsed.pathname) &&
+          ["rsshub.app", "rsshub.rssforever.com", "hub.slarker.me", "rsshub.pseudoyu.com"].includes(parsed.hostname.toLowerCase());
+      } catch (_) { return false; }
+    })();
+    const isLocalHttpOrigin = location.protocol === "http:" && ["localhost", "127.0.0.1"].includes(location.hostname);
+    const candidates = [];
+    // A localhost launcher can fetch RSSHub server-side, avoiding browser CORS
+    // restrictions and unreliable public CORS proxies for TikTok routes.
+    if (isTikTokRssHubUrl && isLocalHttpOrigin) {
+      candidates.push(`/__kitchen/tiktok-feed?url=${encodeURIComponent(url)}`);
+    }
+    candidates.push(url, ...CORS_PROXIES.map((_, i) => proxied(url, i)));
+    const selectedCandidates = Number.isInteger(maxCandidates) && maxCandidates > 0
+      ? candidates.slice(0, maxCandidates)
+      : candidates;
+    for (let i = 0; i < selectedCandidates.length; i++) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const response = await fetch(candidates[i], { ...requestOptions, signal: controller.signal });
+        const response = await fetch(selectedCandidates[i], { ...requestOptions, signal: controller.signal });
         if (response.ok) return response;
-        errors.push(`${i === 0 ? "direct" : `proxy${i - 1}`}:HTTP${response.status}`);
+        errors.push(`${i === 0 && isTikTokRssHubUrl && isLocalHttpOrigin ? "local-proxy" : (i === 0 ? "direct" : `proxy${i - (isTikTokRssHubUrl && isLocalHttpOrigin ? 1 : 0) - 1}`)}:HTTP${response.status}`);
       } catch (err) {
-        errors.push(`${i === 0 ? "direct" : `proxy${i - 1}`}:${err.name || err.message || "network error"}`);
+        errors.push(`${i === 0 && isTikTokRssHubUrl && isLocalHttpOrigin ? "local-proxy" : (i === 0 ? "direct" : `proxy${i - (isTikTokRssHubUrl && isLocalHttpOrigin ? 1 : 0) - 1}`)}:${err.name || err.message || "network error"}`);
       } finally {
         clearTimeout(timer);
       }
@@ -1708,12 +1728,12 @@
     throw error;
   }
 
-async function fetchFeedDocument(url) {
+async function fetchFeedDocument(url, timeoutMs = 12000, maxCandidates = null) {
   const res = await fetchWithProxy(url, {
     headers: {
       Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, */*"
     }
-  });
+  }, timeoutMs, maxCandidates);
 
   const text = await res.text();
 
@@ -2111,32 +2131,50 @@ async function fetchFeedDocument(url) {
   function addTikTokFeed() {
     const profileInput = $("#tiktokProfileInput");
     const rssInput = $("#tiktokRssInput");
-    const profileUrl = safeHttpUrl(profileInput.value.trim());
-    const rssUrl = safeHttpUrl(rssInput.value.trim());
-    if (!profileUrl || !rssUrl) {
-      showToast("ENTER BOTH THE TIKTOK PROFILE AND RSS URL");
+    const rawProfile = profileInput.value.trim();
+    const customRss = rssInput.value.trim();
+    if (!rawProfile) {
+      showToast("ENTER A TIKTOK USERNAME OR PROFILE URL");
+      profileInput.focus();
       return;
     }
-    let profile;
-    try { profile = new URL(profileUrl); } catch { showToast("INVALID TIKTOK PROFILE URL"); return; }
-    if (!/(^|\.)tiktok\.com$/i.test(profile.hostname) || !/^\/@[A-Za-z0-9._-]+/.test(profile.pathname)) {
-      showToast("USE A PUBLIC TIKTOK PROFILE URL (/@USERNAME)");
+
+    // Accept @handle, handle, or a public TikTok profile URL.
+    let username = "";
+    if (/^https?:\/\//i.test(rawProfile)) {
+      let profile;
+      try { profile = new URL(rawProfile); } catch { showToast("INVALID TIKTOK PROFILE URL"); return; }
+      if (!/(^|\.)tiktok\.com$/i.test(profile.hostname)) {
+        showToast("USE A TIKTOK PROFILE URL OR @USERNAME");
+        return;
+      }
+      username = profile.pathname.match(/^\/@([A-Za-z0-9._-]+)/)?.[1] || "";
+    } else {
+      username = rawProfile.replace(/^@/, "").replace(/^\/+|\/+$/g, "");
+    }
+    if (!/^[A-Za-z0-9._-]{2,50}$/.test(username)) {
+      showToast("COULD NOT READ THE TIKTOK USERNAME");
       return;
     }
-    let rss;
-    try { rss = new URL(rssUrl); } catch { showToast("INVALID RSS URL"); return; }
-    if (!['http:', 'https:'].includes(rss.protocol)) { showToast("RSS URL MUST USE HTTP OR HTTPS"); return; }
-    const canonicalRss = KitchenRecipeCore.canonicalUrl(rss.href) || rss.href;
+
+    let feedUrl = `https://rsshub.app/tiktok/user/@${username}`;
+    if (customRss) {
+      const rss = safeHttpUrl(customRss);
+      if (!rss) { showToast("CUSTOM RSS URL MUST USE HTTP OR HTTPS"); return; }
+      feedUrl = rss;
+    }
+    const canonicalRss = KitchenRecipeCore.canonicalUrl(feedUrl) || feedUrl;
     if (state.feeds.some(f => KitchenRecipeCore.canonicalUrl(f.url) === KitchenRecipeCore.canonicalUrl(canonicalRss))) {
-      showToast("THIS RSS FEED IS ALREADY ADDED");
+      showToast("THIS TIKTOK FEED IS ALREADY ADDED");
       return;
     }
-    const username = profile.pathname.match(/^\/@([^/]+)/)?.[1] || "creator";
+
     const feed = {
       url: canonicalRss,
       title: `TikTok · @${username}`,
       sourceType: "tiktok",
-      profileUrl: profile.href,
+      profileUrl: `https://www.tiktok.com/@${username}`,
+      feedProvider: customRss ? "custom" : "rsshub",
       status: "loading",
       categories: ["TikTok"],
       posts: []
@@ -2145,11 +2183,17 @@ async function fetchFeedDocument(url) {
     profileInput.value = "";
     rssInput.value = "";
     saveFeeds(); renderFeeds(); renderCatFilters();
-    showToast("TIKTOK FEED ADDED — FETCHING…");
-    fetchFeed(state.feeds.length - 1).then(() => {
+    showToast(customRss ? "TIKTOK RSS ADDED — CHECKING…" : "CHECKING TIKTOK VIA RSSHUB…");
+    const feedIndex = state.feeds.indexOf(feed);
+    fetchFeed(feedIndex).then(() => {
       renderFeeds(); renderCatFilters(); renderResults();
       const panel = document.querySelector(".tiktok-feed-setup");
       if (feed.status === "ok" && panel) panel.open = false;
+      if (feed.status === "error") {
+        showToast("TIKTOK SYNC FAILED — HOVER THE RED DOT FOR DETAILS; RSSHUB INSTANCES MAY BE BLOCKED.");
+      } else {
+        showToast(`TIKTOK FEED READY · ${feed.posts.length} POSTS FOUND`);
+      }
     });
   }
 
@@ -2191,64 +2235,84 @@ async function fetchFeedDocument(url) {
   throw new Error("NOT_A_FEED");
 }
 async function resolveFeedUrl(url) {
-  const first = await fetchFeedDocument(url);
-
-  // Primero comprobar si la URL proporcionada ya es un feed.
-  try {
-    parseFeed(first.text, url);
-
-    return {
-      url,
-      text: first.text
-    };
-  } catch (_) {
-    // No era directamente un RSS/Atom.
+  // RSSHub's TikTok route is marked as anti-crawler and can fail on one
+  // public instance. Retry a small set of public instances before giving up.
+  const rssHubHosts = [
+    "rsshub.app",
+    "rsshub.rssforever.com",
+    "hub.slarker.me",
+    "rsshub.pseudoyu.com"
+  ];
+  const isTikTokRssHub = (() => {
+    try {
+      const parsed = new URL(url);
+      return rssHubHosts.includes(parsed.hostname.toLowerCase()) && /\/tiktok\/user\//i.test(parsed.pathname);
+    } catch (_) { return false; }
+  })();
+  const urlsToTry = [url];
+  if (isTikTokRssHub) {
+    for (const host of rssHubHosts.slice(1)) {
+      try {
+        const alternative = new URL(url);
+        alternative.hostname = host;
+        if (!urlsToTry.includes(alternative.href)) urlsToTry.push(alternative.href);
+      } catch (_) {}
+    }
   }
 
-  // Si es una página web, intentar descubrir su RSS/Atom.
-  const htmlDoc = new DOMParser().parseFromString(
-    first.text,
-    "text/html"
-  );
+  const errors = [];
+  for (let attempt = 0; attempt < urlsToTry.length; attempt++) {
+    const candidateUrl = urlsToTry[attempt];
+    try {
+      // Keep normal feed fetching unchanged; alternate RSSHub instances use
+      // shorter timeouts and fewer proxy attempts to avoid a very long spinner.
+      const result = isTikTokRssHub && attempt > 0
+        ? await fetchFeedDocument(candidateUrl, 5500, 3)
+        : await fetchFeedDocument(candidateUrl, isTikTokRssHub ? 7000 : 12000, isTikTokRssHub ? 3 : null);
+      try {
+        parseFeed(result.text, candidateUrl);
+        return { url: candidateUrl, text: result.text };
+      } catch (parseError) {
+        errors.push(`${new URL(candidateUrl).hostname}: ${parseError.message || "NOT_A_FEED"}`);
+      }
+    } catch (fetchError) {
+      let host = candidateUrl;
+      try { host = new URL(candidateUrl).hostname; } catch (_) {}
+      errors.push(`${host}: ${fetchError.message || "FETCH_FAILED"}`);
+    }
+  }
 
-  const candidates = [];
-
-  htmlDoc
-    .querySelectorAll(
+  // For non-RSSHub URLs, retain RSS autodiscovery for websites that publish
+  // their feed through <link rel="alternate">.
+  if (!isTikTokRssHub) {
+    const first = await fetchFeedDocument(url);
+    const htmlDoc = new DOMParser().parseFromString(first.text, "text/html");
+    const candidates = [];
+    htmlDoc.querySelectorAll(
       'link[rel~="alternate"][type*="rss"], ' +
       'link[rel~="alternate"][type*="atom"], ' +
       'link[type*="application/rss+xml"], ' +
       'link[type*="application/atom+xml"]'
-    )
-    .forEach(link => {
+    ).forEach(link => {
       const href = link.getAttribute("href");
-
       if (!href) return;
-
       try {
         const absoluteUrl = new URL(href, url).href;
-
-        if (!candidates.includes(absoluteUrl)) {
-          candidates.push(absoluteUrl);
-        }
+        if (!candidates.includes(absoluteUrl)) candidates.push(absoluteUrl);
       } catch (_) {}
     });
-
-  for (const candidate of candidates) {
-    try {
-      const result = await fetchFeedDocument(candidate);
-
-      parseFeed(result.text, candidate);
-
-      return {
-        url: candidate,
-        text: result.text
-      };
-    } catch (_) {
-      // Probar el siguiente candidato.
+    for (const candidate of candidates) {
+      try {
+        const result = await fetchFeedDocument(candidate);
+        parseFeed(result.text, candidate);
+        return { url: candidate, text: result.text };
+      } catch (_) {}
     }
   }
 
+  if (isTikTokRssHub) {
+    throw new Error(`RSSHUB_TIKTOK_UNAVAILABLE: ${errors.join(" | ").slice(0, 700)}`);
+  }
   throw new Error("NOT_A_FEED");
 }
 

@@ -1,5 +1,5 @@
 /* Kitchen.exe PWA service worker — versioned shell cache, conservative network handling. */
-const VERSION = 'kitchen-exe-v2.1.0';
+const VERSION = 'kitchen-exe-v2.4.0';
 const SHELL_CACHE = `${VERSION}-shell`;
 const SHELL_ASSETS = [
   './', './index.html', './manifest.json', './recipe-core.js', './storage-core.js',
