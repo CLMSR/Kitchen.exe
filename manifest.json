@@ -1,7 +1,7 @@
 {
-  "name": "Kitchen.exe — Recipe Feed Reader",
+  "name": "Kitchen.exe — Recipe Discovery",
   "short_name": "Kitchen.exe",
-  "description": "Discover recipes by ingredients, follow recipe RSS feeds, and save recipes from your favorite sources.",
+  "description": "Search recipes across the public web, explore ingredients, follow feeds, and save recipes.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -31,14 +31,15 @@
   ],
   "shortcuts": [
     {
-      "name": "Explore by ingredients",
-      "short_name": "Explore",
-      "description": "Search recipes by ingredients across the web and Reddit",
-      "url": "./index.html#explore",
+      "name": "Search recipes everywhere",
+      "short_name": "Discover",
+      "description": "Search recipes, videos, blogs and public social results",
+      "url": "./index.html#discover",
       "icons": [
         {
-          "src": "./icon-192.png",
-          "sizes": "192x192"
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -49,8 +50,9 @@
       "url": "./index.html#feeds",
       "icons": [
         {
-          "src": "./icon-192.png",
-          "sizes": "192x192"
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#f2efe5">
-  <meta name="description" content="Kitchen.exe — discover recipes by ingredients, follow RSS and social feeds, and organize saved recipes.">
+  <meta name="description" content="Kitchen.exe — search recipes across the public web, explore ingredients, follow feeds, and save recipes.">
 
   <!-- Kitchen.exe — App Icons / PWA -->
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
@@ -22,7 +22,7 @@
   <meta name="msapplication-TileColor" content="#f2efe5">
   <meta name="msapplication-TileImage" content="./icons/icon-192.png">
 
-  <title>Kitchen.exe — Recipe Feed Reader</title>
+  <title>Kitchen.exe — Recipe Discovery</title>
 </head>
 <style>
   :root{
@@ -826,6 +826,67 @@
   }
   .load-more-btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 
+  /* ============ DISCOVER TAB: global multi-source search ============ */
+  .app-icon{padding:0;overflow:hidden;border:1.5px solid var(--panel)}
+  .app-icon img{width:100%;height:100%;object-fit:cover;display:block}
+  .discover-hero{padding:clamp(22px,4vw,42px);background:linear-gradient(135deg,#f3eee2 0%,#e4eadb 58%,#f4d7c8 100%);color:#1c3027;border-bottom:2px solid var(--ink)}
+  .discover-eyebrow{display:flex;align-items:center;gap:8px;font:700 10px var(--mono);letter-spacing:.12em;margin-bottom:14px}
+  .discover-spark{display:grid;place-items:center;width:23px;height:23px;background:#234b3b;color:#f2efe5;border-radius:50%;font-size:15px}
+  .discover-hero h2{margin:0 0 8px;font:700 clamp(28px,4vw,46px)/1 var(--mono);letter-spacing:-.065em;text-transform:uppercase}
+  .discover-hero>p{font:12px/1.6 var(--mono);max-width:760px;margin:0}
+  .discover-search{display:flex;align-items:center;gap:10px;margin-top:22px;padding:8px 9px 8px 14px;background:#fffdf7;border:2px solid #1c3027;box-shadow:4px 4px 0 #1c3027;max-width:900px}
+  .discover-search>span{font-size:25px;line-height:1;color:#1c3027}
+  .discover-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#171717;padding:9px 4px;font:15px var(--mono)}
+  .discover-search-btn{border:2px solid #1c3027;background:#234b3b;color:#fffdf7;padding:11px 17px;font:700 11px var(--mono);text-transform:uppercase;cursor:pointer}
+  .discover-search-btn:disabled{opacity:.55;cursor:wait}
+  .discover-source-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:16px}
+  .discover-source-label{font:700 10px var(--mono);opacity:.7;margin-right:3px}
+  .discover-source{border:1.5px solid #1c3027;background:#fffdf7;color:#1c3027;padding:7px 10px;font:700 10px var(--mono);cursor:pointer}
+  .discover-source.active{background:#234b3b;color:#fffdf7}
+  .discover-disclaimer{margin-top:12px!important;font-size:10px!important;opacity:.78}
+  .discover-main{padding:clamp(15px,2.5vw,25px)}
+  .discover-results-toolbar{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:14px}
+  .discover-results-toolbar h3{margin:0;font:700 16px var(--mono);text-transform:uppercase}
+  .discover-results-toolbar p{margin:5px 0 0;color:var(--muted);font:11px/1.5 var(--mono)}
+  .discover-sort-label{display:flex;align-items:center;gap:7px;font:700 10px var(--mono);white-space:nowrap}
+  .discover-sort-label select{border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:8px;font:11px var(--mono)}
+  .discover-status{margin:0 0 12px;padding:9px 11px;border:1.5px dashed var(--ink);font:10px/1.5 var(--mono);color:var(--muted)}
+  .discover-status[hidden]{display:none}
+  .discover-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:13px;align-items:stretch}
+  .discover-card{border:1.5px solid var(--ink);background:var(--panel);display:flex;flex-direction:column;min-width:0;box-shadow:3px 3px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+  .discover-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+  .discover-card-image{height:150px;background:var(--soft);border-bottom:1.5px solid var(--ink);overflow:hidden;display:grid;place-items:center}
+  .discover-card-image img{width:100%;height:100%;object-fit:cover;display:block}.discover-card-image img.discover-fallback-image{object-fit:contain;padding:24px;box-sizing:border-box;background:var(--soft)}
+  .discover-placeholder{font-size:35px;color:var(--muted);opacity:.7}
+  .discover-card-body{padding:12px;display:flex;flex-direction:column;flex:1;gap:8px}
+  .discover-card-meta{display:flex;justify-content:space-between;align-items:center;gap:7px;font:700 9px var(--mono);text-transform:uppercase;color:var(--muted)}
+  .discover-source-badge{border:1px solid var(--ink);padding:4px 6px;background:var(--soft);color:var(--ink);max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .discover-card h4{font:700 14px/1.3 var(--mono);text-transform:uppercase;margin:0;overflow-wrap:anywhere}
+  .discover-card-excerpt{font:11px/1.55 var(--mono);color:var(--muted);margin:0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+  .discover-card-host{font:10px var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .discover-card-actions{display:flex;gap:6px;margin-top:4px}
+  .discover-card-actions button,.discover-card-actions a{flex:1;min-width:0;text-align:center;text-decoration:none;border:1.5px solid var(--ink);padding:8px 7px;background:transparent;color:var(--ink);font:700 10px var(--mono);cursor:pointer}
+  .discover-card-actions .discover-details{background:var(--ink);color:var(--panel)}
+  .discover-card-actions button:hover,.discover-card-actions a:hover{background:var(--accent);color:#171717}
+  .discover-empty{grid-column:1/-1;text-align:center;padding:44px 18px;border:2px dashed var(--ink);background:var(--paper)}
+  .discover-empty-mark{font:700 42px var(--mono);margin-bottom:8px}
+  .discover-empty strong{font:700 15px var(--mono);text-transform:uppercase}
+  .discover-empty p{max-width:550px;margin:8px auto 0;color:var(--muted);font:11px/1.6 var(--mono)}
+  .discover-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px dashed var(--ink);padding-top:13px;margin-top:18px;color:var(--muted);font:10px var(--mono)}
+  .discovery-recipe-section{border-top:2px solid var(--ink);padding-top:14px;margin-top:16px}
+  .discovery-recipe-section h4{font:700 12px var(--mono);text-transform:uppercase;margin:0 0 9px}
+  .discovery-recipe-list{margin:0;padding-left:22px;font:12px/1.7 var(--mono)}
+  .discovery-recipe-list li{padding-left:4px;margin:0 0 7px}
+  .discovery-nutrition{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
+  .discovery-nutrition-item{border:1px solid var(--ink);padding:9px;background:var(--paper)}
+  .discovery-nutrition-item span{display:block;color:var(--muted);font:9px var(--mono);text-transform:uppercase}
+  .discovery-nutrition-item strong{display:block;margin-top:5px;font:700 13px var(--mono);overflow-wrap:anywhere}
+  .discover-recipe-image{width:100%;max-height:270px;object-fit:cover;border:1.5px solid var(--ink);margin-bottom:12px}
+  .discover-recipe-description{font:12px/1.6 var(--mono);color:var(--muted)}
+  .discover-recipe-note{border:1px dashed var(--ink);padding:10px;color:var(--muted);font:10px/1.6 var(--mono)}
+  @media(max-width:650px){.discover-results-toolbar{align-items:flex-start;flex-direction:column}.discover-search{gap:6px}.discover-search-btn{padding:10px}.discover-search input{font-size:12px}.discover-results{grid-template-columns:1fr 1fr;gap:9px}.discover-card-image{height:118px}.discover-card-body{padding:9px}.discover-card h4{font-size:11px}.discover-card-actions{flex-direction:column}.discover-hero h2{font-size:30px}}
+  @media(max-width:420px){.discover-results{grid-template-columns:1fr}}
+
   /* ============ EXPLORE TAB: ingredient search ============ */
   .explore-hero{
     border-bottom:2px solid var(--ink);
@@ -1293,12 +1354,12 @@
   <main class="window">
     <header class="titlebar">
       <div class="title-left">
-        <div class="app-icon">🍳</div>
+        <div class="app-icon"><img src="./icons/icon-192.png" alt="Kitchen.exe logo"></div>
         <div class="title-name">KITCHEN.EXE</div>
       </div>
       <div class="title-actions">
         <button class="title-btn" id="themeToggle" title="Toggle dark mode">◐</button>
-        <div class="title-meta">v5.1 // UNIFIED DISCOVERY</div>
+        <div class="title-meta">v5.2 // RECIPE SEARCH</div>
       </div>
     </header>
 
@@ -1307,8 +1368,11 @@
       <button class="tab active" data-tab="feeds" role="tab">
         📡 My Feeds <span class="tab-badge" id="tabFeedCount">0</span>
       </button>
+      <button class="tab" data-tab="discover" role="tab">
+        ✳ Discover <span class="tab-badge">NEW</span>
+      </button>
       <button class="tab" data-tab="explore" role="tab">
-        🔎 Explore <span class="tab-badge" id="tabExploreBadge">web</span>
+        🥕 Explore <span class="tab-badge" id="tabExploreBadge">ingredients</span>
       </button>
     </nav>
 
@@ -1452,7 +1516,44 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- TAB 2: EXPLORE (nueva búsqueda por ingredientes) -->
+    <!-- TAB 2: DISCOVER (global keyword search) -->
+    <!-- ============================================ -->
+    <div class="tab-panel" id="panel-discover">
+      <section class="discover-hero">
+        <div class="discover-eyebrow"><span class="discover-spark">✳</span> CROSS-PLATFORM RECIPE SEARCH</div>
+        <h2>Find it anywhere.</h2>
+        <p>Search recipes, videos and community ideas across the public web. Type in English, español, français or any language — your query is kept as written.</p>
+        <form class="discover-search" id="discoverForm">
+          <span aria-hidden="true">⌕</span>
+          <input id="discoverQuery" type="search" placeholder="e.g. healthy tiramisu / tiramisú saludable" autocomplete="off" required minlength="2" maxlength="220">
+          <button class="discover-search-btn" id="discoverSearchBtn" type="submit">Search ↗</button>
+        </form>
+        <div class="discover-source-row" id="discoverSourceRow" aria-label="Search sources">
+          <span class="discover-source-label">SEARCH IN</span>
+          <button type="button" class="discover-source active" data-discover-source="all">All sources</button>
+          <button type="button" class="discover-source" data-discover-source="web">Websites</button>
+          <button type="button" class="discover-source" data-discover-source="youtube">YouTube</button>
+          <button type="button" class="discover-source" data-discover-source="tiktok">TikTok</button>
+          <button type="button" class="discover-source" data-discover-source="instagram">Instagram</button>
+          <button type="button" class="discover-source" data-discover-source="reddit">Reddit</button>
+        </div>
+        <p class="discover-disclaimer">Results come from public web search and may not include every post. Some platforms restrict public indexing; unavailable recipe details and nutrition values are never invented.</p>
+      </section>
+      <section class="discover-main">
+        <div class="discover-results-toolbar">
+          <div><h3 id="discoverResultsTitle">Ready to discover?</h3><p id="discoverResultsSubtitle">Search for a dish, ingredient, diet, creator or cooking technique.</p></div>
+          <label class="discover-sort-label">SORT <select id="discoverSort"><option value="relevance">Relevance</option><option value="source">Source</option><option value="title">Title A–Z</option></select></label>
+        </div>
+        <div class="discover-status" id="discoverStatus" hidden></div>
+        <div class="discover-results" id="discoverResults">
+          <div class="discover-empty"><div class="discover-empty-mark">⌕</div><strong>What are you craving?</strong><p>Try “healthy tiramisu”, “lentejas con verduras” or “high-protein breakfast”.</p></div>
+        </div>
+        <div class="discover-footer"><span>KITCHEN.EXE // DISCOVER</span><span id="discoverStats">0 RESULTS</span></div>
+      </section>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- TAB 3: EXPLORE (ingredient search) -->
     <!-- ============================================ -->
     <div class="tab-panel" id="panel-explore">
       <div class="explore-hero">
@@ -1594,6 +1695,11 @@
     exploreMaxTime: 0,
     exploreDishType: "all",
     exploreVisible: 12,
+    discoverQuery: "",
+    discoverSources: ["web", "youtube", "tiktok", "instagram", "reddit"],
+    discoverResults: [],
+    discoverSort: "relevance",
+    discoverLoading: false,
     dismissed: (Array.isArray(readStored("kitchenExeDismissed", [])) ? readStored("kitchenExeDismissed", []) : []).filter(x => typeof x === "string"),
     showDismissed: false,
     feedSourceFilter: "all",
@@ -1972,14 +2078,14 @@ async function fetchFeedDocument(url, timeoutMs = 12000, maxCandidates = null) {
 
   /* ============ TABS ============ */
   function activateTab(target) {
-    if (!["feeds", "explore"].includes(target)) return;
+    if (!["feeds", "discover", "explore"].includes(target)) return;
     state.activeTab = target;
     $$(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.tab === target));
     $$(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === "panel-" + target));
   }
   $$(".tab").forEach(tab => tab.addEventListener("click", () => activateTab(tab.dataset.tab)));
   const initialTab = window.location.hash.replace(/^#/, "");
-  if (initialTab === "explore" || initialTab === "feeds") activateTab(initialTab);
+  if (["feeds", "discover", "explore"].includes(initialTab)) activateTab(initialTab);
 
   /* ============================================================ */
   /* ============ FEED TAB ====================================== */
@@ -3293,6 +3399,12 @@ async function fetchFeed(index) {
       if (name) ings.push({ name: name.toLowerCase(), display: `${measure} ${name}`.trim() });
     }
     const userSet = state.exploreIngredients.map(i => i.toLowerCase());
+    const rawInstructions = String(meal.strInstructions || "").replace(/\r/g, "").trim();
+    let instructionSteps = rawInstructions.split(/\n+/).map(v => v.trim()).filter(Boolean);
+    if (instructionSteps.length <= 1 && rawInstructions.length > 220) {
+      instructionSteps = rawInstructions.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÜÑ0-9])/).map(v => v.trim()).filter(Boolean);
+    }
+    if (!instructionSteps.length && rawInstructions) instructionSteps = [rawInstructions];
     const ingsHtml = ings.map(i => {
       const isHave = userSet.some(u => i.name.includes(u) || u.includes(i.name));
       return `<div class="modal-ing" style="background:${isHave ? '#c8f0c8' : '#ffd6d0'};color:#171717" data-original="${escapeHtml(i.display)}">
@@ -3320,8 +3432,12 @@ async function fetchFeed(index) {
         <div class="modal-ingredients">${ingsHtml}</div>
       </div>
       <div class="modal-section">
-        <h4>Instructions</h4>
-        <div class="modal-instructions">${escapeHtml(meal.strInstructions || "")}</div>
+        <h4>Instructions · ${instructionSteps.length} step${instructionSteps.length === 1 ? "" : "s"}</h4>
+        <ol class="discovery-recipe-list">${instructionSteps.map(step => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+      </div>
+      <div class="modal-section">
+        <h4>Nutrition</h4>
+        <p class="discover-recipe-note">TheMealDB does not provide verified nutrition values for this recipe. No calories or macros have been estimated.</p>
       </div>
       <div class="recipe-notes-editor">
         <label>Personal notes<textarea id="mealPersonalNotes" placeholder="What would you change next time?">${escapeHtml((state.saved.find(s => (KitchenRecipeCore.canonicalUrl(s.url) || s.url) === (KitchenRecipeCore.canonicalUrl(item.link) || item.id)) || {}).notes || "")}</textarea></label>
@@ -3342,7 +3458,7 @@ async function fetchFeed(index) {
       }
       saved.notes = String($("#mealPersonalNotes")?.value || "").trim();
       saved.tags = String($("#mealPersonalTags")?.value || "").split(",").map(v => v.trim()).filter(Boolean).slice(0, 30);
-      saved.recipe = { ingredients: ings.map(i => i.display), instructions: String(meal.strInstructions || "").split(/\r?\n+/).map(v => v.trim()).filter(Boolean), category: meal.strCategory || "", cuisine: meal.strArea || "", image: meal.strMealThumb || "", totalTime: "", servings: "" };
+      saved.recipe = { ingredients: ings.map(i => i.display), instructions: instructionSteps, category: meal.strCategory || "", cuisine: meal.strArea || "", image: meal.strMealThumb || "", totalTime: "", servings: "" };
       writeStored("kitchenExeSaved", state.saved);
       renderSavedPanel();
       showToast("RECIPE NOTES & TAGS SAVED");
@@ -3370,6 +3486,202 @@ async function fetchFeed(index) {
     URL.revokeObjectURL(a.href);
     showToast("EXPORTED AS MARKDOWN");
   }
+
+  /* ---------- Global multi-source discovery ---------- */
+  const discoverForm = $("#discoverForm");
+  const discoverQuery = $("#discoverQuery");
+  const discoverResults = $("#discoverResults");
+  const discoverResultsTitle = $("#discoverResultsTitle");
+  const discoverResultsSubtitle = $("#discoverResultsSubtitle");
+  const discoverStatus = $("#discoverStatus");
+  const discoverStats = $("#discoverStats");
+  const discoverSort = $("#discoverSort");
+  const DISCOVER_SOURCE_LABELS = { web: "Websites", youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram", reddit: "Reddit" };
+  const DISCOVER_SOURCE_ICONS = { web: "↗", youtube: "▶", tiktok: "♪", instagram: "◎", reddit: "◉" };
+
+  function setDiscoverSources(source) {
+    const allSources = ["web", "youtube", "tiktok", "instagram", "reddit"];
+    const allWasActive = state.discoverSources.length === allSources.length;
+    if (source === "all" || (state.discoverSources.length === 1 && state.discoverSources[0] === source)) {
+      state.discoverSources = allSources;
+    } else if (allWasActive) {
+      state.discoverSources = [source];
+    } else if (state.discoverSources.includes(source)) {
+      state.discoverSources = state.discoverSources.filter(item => item !== source);
+    } else state.discoverSources.push(source);
+    const allActive = state.discoverSources.length === allSources.length;
+    $$("[data-discover-source]").forEach(btn => {
+      const key = btn.dataset.discoverSource;
+      btn.classList.toggle("active", key === "all" ? allActive : state.discoverSources.includes(key));
+    });
+  }
+
+  function renderDiscoverResults() {
+    let items = [...state.discoverResults];
+    if (state.discoverSort === "title") items.sort((a,b) => a.title.localeCompare(b.title));
+    else if (state.discoverSort === "source") items.sort((a,b) => (a.sourceLabel || "").localeCompare(b.sourceLabel || "") || a.title.localeCompare(b.title));
+    discoverStats.textContent = `${items.length} RESULT${items.length === 1 ? "" : "S"}`;
+    if (!items.length) return;
+    discoverResults.innerHTML = items.map((item, index) => {
+      const image = safeHttpUrl(item.image || "");
+      const icon = DISCOVER_SOURCE_ICONS[item.source] || "↗";
+      return `<article class="discover-card" data-discover-index="${index}" data-discover-url="${escapeHtml(item.url || "")}">
+        <div class="discover-card-image">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/icons/recipe-placeholder.svg';this.classList.add('discover-fallback-image')">` : `<img class="discover-fallback-image" src="/icons/recipe-placeholder.svg" alt="" loading="lazy" onerror="this.outerHTML='✳'">`}</div>
+        <div class="discover-card-body">
+          <div class="discover-card-meta"><span class="discover-source-badge">${icon} ${escapeHtml(item.sourceLabel || "Website")}</span><span>${escapeHtml(item.host || "")}</span></div>
+          <h4>${escapeHtml(item.title || "Untitled result")}</h4>
+          <p class="discover-card-excerpt">${escapeHtml(item.excerpt || "Open the original source to view the full post or recipe.")}</p>
+          <div class="discover-card-host">${escapeHtml(item.host || "Public web result")}</div>
+          <div class="discover-card-actions"><button type="button" class="discover-details" data-discover-details="${index}">Recipe details</button><a href="${escapeHtml(safeHttpUrl(item.url) || "#")}" target="_blank" rel="noopener noreferrer">Open ↗</a><button type="button" data-discover-save="${index}" aria-label="Save result">☆ Save</button></div>
+        </div>
+      </article>`;
+    }).join("");
+    discoverResults.querySelectorAll("[data-discover-details]").forEach(btn => btn.addEventListener("click", () => openDiscoverResult(items[Number(btn.dataset.discoverDetails)])));
+    discoverResults.querySelectorAll("[data-discover-save]").forEach(btn => btn.addEventListener("click", () => saveDiscoverResult(items[Number(btn.dataset.discoverSave)])));
+  }
+
+  async function hydrateDiscoverPreviews(results) {
+    const candidates = [];
+    for (const source of ["web", "youtube", "tiktok", "instagram", "reddit"]) {
+      const item = results.find(result => result.source === source && !safeHttpUrl(result.image || "") && !result.preview);
+      if (item) candidates.push(item);
+    }
+    for (const item of results) {
+      if (candidates.length >= 8) break;
+      if (!safeHttpUrl(item.image || "") && !item.preview && !candidates.includes(item)) candidates.push(item);
+    }
+    for (let i = 0; i < candidates.length; i += 3) {
+      const batch = candidates.slice(i, i + 3);
+      await Promise.allSettled(batch.map(async item => {
+        try {
+          const response = await fetch(`/__kitchen/recipe?url=${encodeURIComponent(item.url)}`, { cache: "no-store" });
+          if (!response.ok) return;
+          const details = await response.json();
+          item.preview = details;
+          const image = safeHttpUrl(details.image || "");
+          if (!image) return;
+          item.image = image;
+          const card = [...discoverResults.querySelectorAll(".discover-card")].find(node => node.dataset.discoverUrl === item.url);
+          const imageBox = card?.querySelector(".discover-card-image");
+          if (imageBox && !imageBox.querySelector("img")) imageBox.innerHTML = `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+        } catch { /* A source can block previews; keep its text result and original link. */ }
+      }));
+    }
+  }
+
+  function discoverExternalLinks(query) {
+    const q = encodeURIComponent(query);
+    const links = [
+      ["Web search", `https://www.google.com/search?q=${q}`],
+      ["YouTube", `https://www.youtube.com/results?search_query=${q}`],
+      ["TikTok", `https://www.tiktok.com/search?q=${q}`],
+      ["Instagram via web", `https://www.google.com/search?q=${encodeURIComponent("site:instagram.com " + query)}`],
+      ["Reddit", `https://www.reddit.com/search/?q=${q}`]
+    ];
+    return `<div class="discover-empty"><div class="discover-empty-mark">⌕</div><strong>Could not load in-app results</strong><p>The public search service may be unavailable. You can still search the same query directly without changing its language.</p><div class="discover-card-actions" style="max-width:650px;margin:16px auto 0;flex-wrap:wrap">${links.map(([label,url])=>`<a href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`).join("")}</div></div>`;
+  }
+
+  async function runDiscoverSearch(event) {
+    if (event) event.preventDefault();
+    const query = String(discoverQuery.value || "").trim();
+    if (query.length < 2) { showToast("ENTER AT LEAST 2 CHARACTERS"); discoverQuery.focus(); return; }
+    state.discoverQuery = query;
+    state.discoverLoading = true;
+    const btn = $("#discoverSearchBtn");
+    btn.disabled = true;
+    btn.textContent = "Searching…";
+    discoverStatus.hidden = false;
+    discoverStatus.textContent = `SEARCHING PUBLIC SOURCES FOR: “${query}”`;
+    discoverResults.innerHTML = Array.from({length:6}, () => `<div class="discover-card"><div class="discover-card-image skeleton"></div><div class="discover-card-body"><div class="skeleton" style="height:12px"></div><div class="skeleton" style="height:32px;margin-top:8px"></div><div class="skeleton" style="height:45px;margin-top:8px"></div></div></div>`).join("");
+    discoverResultsTitle.textContent = `Searching for “${query}”`;
+    discoverResultsSubtitle.textContent = "Looking across selected public sources. Results may vary by language and platform indexing.";
+    try {
+      const sources = state.discoverSources.join(",");
+      const response = await fetch(`/__kitchen/search?q=${encodeURIComponent(query)}&sources=${encodeURIComponent(sources)}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Search server returned HTTP ${response.status}`);
+      const data = await response.json();
+      state.discoverResults = Array.isArray(data.results) ? data.results.map(item => ({ ...item, matchedIngredients: [], recipe: null })) : [];
+      discoverResultsTitle.textContent = `${state.discoverResults.length} results for “${query}”`;
+      discoverResultsSubtitle.textContent = `Search query kept in its original language · ${[...new Set(state.discoverResults.map(item => item.sourceLabel))].join(", ") || "No sources returned results"}`;
+      const errorSources = (data.errors || []).map(x => `${x.source}: ${x.error}`).slice(0, 4);
+      discoverStatus.textContent = errorSources.length ? `PARTIAL SEARCH · ${errorSources.join(" · ")}` : `SEARCH COMPLETE · ${data.provider || "Public web search"}`;
+      if (!state.discoverResults.length) discoverResults.innerHTML = discoverExternalLinks(query);
+      else {
+        renderDiscoverResults();
+        hydrateDiscoverPreviews(state.discoverResults.slice());
+      }
+    } catch (error) {
+      console.warn("[Discover] Search failed:", error);
+      state.discoverResults = [];
+      discoverResultsTitle.textContent = `Search for “${query}”`;
+      discoverResultsSubtitle.textContent = "In-app search is unavailable; direct search links are available below.";
+      discoverStatus.textContent = `SEARCH UNAVAILABLE · ${error.message || "Local search server unavailable"}`;
+      discoverResults.innerHTML = discoverExternalLinks(query);
+      discoverStats.textContent = "0 RESULTS";
+    } finally {
+      state.discoverLoading = false;
+      btn.disabled = false;
+      btn.textContent = "Search ↗";
+    }
+  }
+
+  async function openDiscoverResult(item) {
+    if (!item) return;
+    modalTitle.textContent = item.title || "Recipe details";
+    modalBody.innerHTML = `<div class="empty" style="border:none;background:transparent"><div class="big">⌕</div><p>Checking the original page for structured recipe details…</p></div>`;
+    modalBackdrop.classList.add("show");
+    document.body.style.overflow = "hidden";
+    let details = item.preview || null;
+    if (!details) {
+      try {
+        const response = await fetch(`/__kitchen/recipe?url=${encodeURIComponent(item.url)}`, { cache: "no-store" });
+        if (response.ok) details = await response.json();
+        else details = { error: `The source could not be read (HTTP ${response.status}).` };
+      } catch (error) {
+        console.warn("[Discover] Recipe extraction failed:", error);
+        details = { error: "Kitchen.exe could not read this page. The source may block automated access or be temporarily unavailable." };
+      }
+    }
+    const title = details?.title || item.title || "Recipe details";
+    const image = safeHttpUrl(details?.image || item.image || "");
+    const description = details?.description || item.excerpt || "No description was provided by the source.";
+    const ingredients = Array.isArray(details?.ingredients) ? details.ingredients : [];
+    const steps = Array.isArray(details?.instructions) ? details.instructions : [];
+    const nutrition = details?.nutrition || {};
+    const nutritionLabels = { calories: "Calories", proteinContent: "Protein", carbohydrateContent: "Carbohydrates", fatContent: "Fat", fiberContent: "Fibre", sugarContent: "Sugar", sodiumContent: "Sodium" };
+    const nutritionEntries = Object.entries(nutrition).filter(([key,value]) => value && nutritionLabels[key]);
+    const time = [details?.prepTime && `Prep ${details.prepTime}`, details?.cookTime && `Cook ${details.cookTime}`, details?.totalTime && `Total ${details.totalTime}`].filter(Boolean).join(" · ");
+    modalBody.innerHTML = `${image ? `<img class="discover-recipe-image" src="${escapeHtml(image)}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/icons/recipe-placeholder.svg';this.style.objectFit='contain';this.style.padding='24px';this.style.background='var(--soft)'">` : `<img class="discover-recipe-image" src="/icons/recipe-placeholder.svg" alt="" style="object-fit:contain;padding:24px;background:var(--soft)">`}
+      <div class="modal-meta">${escapeHtml(item.sourceLabel || "Public web result")}${details?.author ? " · " + escapeHtml(details.author) : ""}${details?.category ? " · " + escapeHtml(details.category) : ""}${details?.cuisine ? " · " + escapeHtml(details.cuisine) : ""}</div>
+      <h2 style="font:700 20px/1.2 var(--mono);text-transform:uppercase;margin:0 0 10px">${escapeHtml(title)}</h2>
+      <p class="discover-recipe-description">${escapeHtml(description)}</p>
+      ${time || details?.yield ? `<p class="modal-meta">${escapeHtml([time, details?.yield ? "Yield: " + details.yield : ""].filter(Boolean).join(" · "))}</p>` : ""}
+      <div class="modal-actions"><a class="modal-action-btn primary" href="${escapeHtml(safeHttpUrl(item.url) || "#")}" target="_blank" rel="noopener noreferrer">Open original ↗</a><button class="modal-action-btn" id="discoverSaveDetailBtn" type="button">☆ Save result</button></div>
+      ${ingredients.length ? `<section class="discovery-recipe-section"><h4>Ingredients (${ingredients.length})</h4><ul class="discovery-recipe-list">${ingredients.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>` : `<section class="discovery-recipe-section"><h4>Ingredients</h4><p class="discover-recipe-note">The original page does not expose a structured ingredient list. Open the source to read the full recipe.</p></section>`}
+      ${steps.length ? `<section class="discovery-recipe-section"><h4>Instructions</h4><ol class="discovery-recipe-list">${steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>` : `<section class="discovery-recipe-section"><h4>Instructions</h4><p class="discover-recipe-note">No structured instructions were detected. We do not generate or guess cooking steps.</p></section>`}
+      ${nutritionEntries.length ? `<section class="discovery-recipe-section"><h4>Nutrition · as published by source</h4><div class="discovery-nutrition">${nutritionEntries.map(([key,value])=>`<div class="discovery-nutrition-item"><span>${nutritionLabels[key]}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>` : `<section class="discovery-recipe-section"><h4>Nutrition</h4><p class="discover-recipe-note">No nutrition values were found in the page's structured data. Values are not estimated automatically.</p></section>`}
+      <p class="discover-recipe-note" style="margin-top:14px">${details?.error ? escapeHtml(details.error) : details?.foundRecipe ? "Recipe data was extracted from structured metadata on the original page." : "Only public page metadata was available; the source may not publish structured recipe data or may restrict automated access."}</p>`;
+    $("#discoverSaveDetailBtn")?.addEventListener("click", () => saveDiscoverResult({ ...item, title, image, recipe: { ingredients, instructions: steps, nutrition, totalTime: details?.totalTime || "", servings: details?.yield || "" } }));
+  }
+
+  function saveDiscoverResult(item) {
+    const url = KitchenRecipeCore.canonicalUrl(item.url) || item.url;
+    if (!url) return;
+    const existing = state.saved.find(saved => (KitchenRecipeCore.canonicalUrl(saved.url) || saved.url) === url);
+    if (existing) { showToast("ALREADY SAVED"); return; }
+    state.saved.push({ url, title: item.title || "Saved result", imageUrl: safeHttpUrl(item.image || "") || "", source: item.sourceLabel || item.source || "Web", savedAt: Date.now(), recipe: item.recipe || null, notes: "", tags: [] });
+    writeStored("kitchenExeSaved", state.saved);
+    renderSavedPanel();
+    showToast("SAVED TO YOUR RECIPES");
+  }
+
+  discoverForm.addEventListener("submit", runDiscoverSearch);
+  $$("[data-discover-source]").forEach(btn => btn.addEventListener("click", () => {
+    const source = btn.dataset.discoverSource;
+    if (source === "all") setDiscoverSources("all");
+    else setDiscoverSources(source);
+  }));
+  discoverSort.addEventListener("change", () => { state.discoverSort = discoverSort.value; renderDiscoverResults(); });
 
   /* ---------- Explore events ---------- */
   $("#exploreSearchBtn").addEventListener("click", runExploreSearch);

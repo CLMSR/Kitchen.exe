@@ -1,9 +1,9 @@
 /* Kitchen.exe PWA service worker — versioned shell cache, conservative network handling. */
-const VERSION = 'kitchen-exe-v2.4.0';
+const VERSION = 'kitchen-exe-v2.5.0';
 const SHELL_CACHE = `${VERSION}-shell`;
 const SHELL_ASSETS = [
   './', './index.html', './manifest.json', './recipe-core.js', './storage-core.js',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png', './icons/favicon-16.png'
+  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png', './icons/favicon-16.png', './icons/kitchen-logo.svg', './icons/recipe-placeholder.svg'
 ];
 
 self.addEventListener('install', event => {
